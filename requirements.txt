@@ -1,0 +1,4 @@
+### Pip requirements with versions ###
+pyside2==5.15.1
+opencv-python==4.4.0.46
+pylint==2.6.0

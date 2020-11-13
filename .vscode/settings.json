@@ -1,0 +1,6 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.pycodestyleEnabled": true,
+    "python.workspaceSymbols.rebuildOnFileSave": false,
+    "python.linting.pylintEnabled": true,
+}

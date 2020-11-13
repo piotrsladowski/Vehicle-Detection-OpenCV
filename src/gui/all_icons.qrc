@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="icons">
+    <file alias="car_logo">icons/cil-car.png</file>
+    <file alias="file">icons/cil-file.png</file>
+    <file alias="folder_open">icons/cil-folder-open.png</file>
+    <file alias="pause">icons/cil-media-pause.png</file>
+    <file alias="play">icons/cil-media-play.png</file>
+    <file alias="stop">icons/cil-media-stop.png</file>
+    <file alias="max">icons/cil-window-maximize.png</file>
+    <file alias="min">icons/cil-window-minimize.png</file>
+    <file alias="res">icons/cil-window-restore.png</file>
+    <file alias="x">icons/cil-x.png</file>
+  </qresource>
+</RCC>

@@ -1,7 +1,7 @@
 # IO_VehicleDetection
 
 ## Virtualenv
-
+0. Install all required modules using `pip install -r requirements.txt`
 1. Get `virtualenv` using `pip install virtualenv`
 2. `virtualenv --python C:\Path\To\Python\python.exe env`. Get Python 3.8.6
 3. `cd <project-directory>`
@@ -10,3 +10,7 @@
 
 __Here you go__ -> make sure to always run `venv` when doing the project</br>
 *Hint:* Set the Python interpreter in VSCode or PyCharm
+
+## Pipenv - Python packaging tool
+1. Activate Pipenv environment: `pipenv shell`
+2. Install packages: `pipenv install`

@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+opencv-python = "==4.4.0.46"
+pylint = "==2.6.0"
+PySide2 = "==5.15.1"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"

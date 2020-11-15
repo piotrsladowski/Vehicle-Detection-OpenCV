@@ -10,9 +10,9 @@
 
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtMultimedia import QMediaPlayer
-from PySide2.QtMultimediaWidgets import QVideoWidget
 from PySide2.QtWidgets import *
+
+import all_icons_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -21,26 +21,21 @@ class Ui_MainWindow(object):
         MainWindow.resize(800, 600)
         MainWindow.setMinimumSize(QSize(800, 600))
         MainWindow.setMaximumSize(QSize(800, 600))
-        
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        
         self.drop_shadow_layout = QVBoxLayout(self.centralwidget)
         self.drop_shadow_layout.setSpacing(0)
         self.drop_shadow_layout.setObjectName(u"drop_shadow_layout")
         self.drop_shadow_layout.setContentsMargins(10, 10, 10, 10)
-        
         self.dropShadowFrame = QFrame(self.centralwidget)
         self.dropShadowFrame.setObjectName(u"dropShadowFrame")
         self.dropShadowFrame.setStyleSheet(u"background-color: rgb(44, 53, 72);")
         self.dropShadowFrame.setFrameShape(QFrame.NoFrame)
         self.dropShadowFrame.setFrameShadow(QFrame.Raised)
-        
         self.verticalLayout = QVBoxLayout(self.dropShadowFrame)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        
         self.titleBar = QFrame(self.dropShadowFrame)
         self.titleBar.setObjectName(u"titleBar")
         self.titleBar.setMinimumSize(QSize(0, 35))
@@ -48,22 +43,18 @@ class Ui_MainWindow(object):
         self.titleBar.setStyleSheet(u"background-color: rgb(52, 59, 72);")
         self.titleBar.setFrameShape(QFrame.NoFrame)
         self.titleBar.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout = QHBoxLayout(self.titleBar)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        
         self.titleFrame = QFrame(self.titleBar)
         self.titleFrame.setObjectName(u"titleFrame")
         self.titleFrame.setFrameShape(QFrame.StyledPanel)
         self.titleFrame.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_2 = QHBoxLayout(self.titleFrame)
         self.horizontalLayout_2.setSpacing(10)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(0, 0, 5, 0)
-        
         self.titleIcon = QLabel(self.titleFrame)
         self.titleIcon.setObjectName(u"titleIcon")
         self.titleIcon.setMinimumSize(QSize(35, 35))
@@ -95,12 +86,10 @@ class Ui_MainWindow(object):
         self.btnsFrame.setMaximumSize(QSize(120, 16777215))
         self.btnsFrame.setFrameShape(QFrame.NoFrame)
         self.btnsFrame.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_3 = QHBoxLayout(self.btnsFrame)
         self.horizontalLayout_3.setSpacing(0)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
-        
         self.btnMinimize = QPushButton(self.btnsFrame)
         self.btnMinimize.setObjectName(u"btnMinimize")
         self.btnMinimize.setMinimumSize(QSize(35, 35))
@@ -167,6 +156,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.btnsFrame)
 
+
         self.verticalLayout.addWidget(self.titleBar)
 
         self.tabWidget = QTabWidget(self.dropShadowFrame)
@@ -210,19 +200,15 @@ class Ui_MainWindow(object):
         font2.setPointSize(10)
         self.tabInput.setFont(font2)
         self.tabInput.setStyleSheet(u"border: 2px solid rgb(44, 53, 72);")
-        
         self.verticalLayout_2 = QVBoxLayout(self.tabInput)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        
         self.frameChooseFile = QFrame(self.tabInput)
         self.frameChooseFile.setObjectName(u"frameChooseFile")
         self.frameChooseFile.setFrameShape(QFrame.StyledPanel)
         self.frameChooseFile.setFrameShadow(QFrame.Raised)
-        
         self.gridLayout = QGridLayout(self.frameChooseFile)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(10, 20, 10, 20)
-        
         self.lineEdit = QLineEdit(self.frameChooseFile)
         self.lineEdit.setObjectName(u"lineEdit")
         self.lineEdit.setMinimumSize(QSize(0, 30))
@@ -275,10 +261,8 @@ class Ui_MainWindow(object):
         self.frameSpacer1.setObjectName(u"frameSpacer1")
         self.frameSpacer1.setFrameShape(QFrame.StyledPanel)
         self.frameSpacer1.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_4 = QHBoxLayout(self.frameSpacer1)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        
         self.label = QLabel(self.frameSpacer1)
         self.label.setObjectName(u"label")
         self.label.setFont(font2)
@@ -288,7 +272,9 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_4.addWidget(self.label)
 
+
         self.gridLayout.addWidget(self.frameSpacer1, 0, 0, 1, 2)
+
 
         self.verticalLayout_2.addWidget(self.frameChooseFile)
 
@@ -324,31 +310,28 @@ class Ui_MainWindow(object):
         self.frameProgress = QFrame(self.tabInput)
         self.frameProgress.setObjectName(u"frameProgress")
         self.frameProgress.setStyleSheet(u"border-radius: 10;\n"
-                                        "background-color: rgb(37, 45, 61);\n")
+"background-color: rgb(37, 45, 61);\n"
+"")
         self.frameProgress.setFrameShape(QFrame.StyledPanel)
         self.frameProgress.setFrameShadow(QFrame.Raised)
-        
         self.verticalLayout_3 = QVBoxLayout(self.frameProgress)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(10, 100, 10, 40)
-        
         self.frameProgressInfo = QFrame(self.frameProgress)
         self.frameProgressInfo.setObjectName(u"frameProgressInfo")
         self.frameProgressInfo.setStyleSheet(u"border:0px;")
         self.frameProgressInfo.setFrameShape(QFrame.NoFrame)
         self.frameProgressInfo.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_12 = QHBoxLayout(self.frameProgressInfo)
         self.horizontalLayout_12.setSpacing(0)
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
         self.horizontalLayout_12.setContentsMargins(15, 10, 15, 10)
-        
         self.labelProgress = QLabel(self.frameProgressInfo)
         self.labelProgress.setObjectName(u"labelProgress")
         self.labelProgress.setMaximumSize(QSize(16777215, 20))
         self.labelProgress.setFont(font2)
         self.labelProgress.setStyleSheet(u"border: 0px;\n"
-                                                "color: white;")
+"color: white;")
         self.labelProgress.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
 
         self.horizontalLayout_12.addWidget(self.labelProgress)
@@ -362,10 +345,11 @@ class Ui_MainWindow(object):
         font5.setWeight(75)
         self.labelTimeLeft.setFont(font5)
         self.labelTimeLeft.setStyleSheet(u"color: white;\n"
-                                                "border:opx;")
+"border:opx;")
         self.labelTimeLeft.setAlignment(Qt.AlignCenter)
 
         self.horizontalLayout_12.addWidget(self.labelTimeLeft)
+
 
         self.verticalLayout_3.addWidget(self.frameProgressInfo)
 
@@ -397,47 +381,53 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.progressBar)
 
+
         self.verticalLayout_2.addWidget(self.frameProgress)
 
         self.tabWidget.addTab(self.tabInput, "")
         self.tabVideo = QWidget()
         self.tabVideo.setObjectName(u"tabVideo")
-        
         self.verticalLayout_7 = QVBoxLayout(self.tabVideo)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        
         self.frameMediaPlayer = QFrame(self.tabVideo)
         self.frameMediaPlayer.setObjectName(u"frameMediaPlayer")
         self.frameMediaPlayer.setMinimumSize(QSize(0, 400))
         self.frameMediaPlayer.setStyleSheet(u"background-color: black;")
         self.frameMediaPlayer.setFrameShape(QFrame.StyledPanel)
         self.frameMediaPlayer.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_10 = QVBoxLayout(self.frameMediaPlayer)
+        self.verticalLayout_10.setSpacing(0)
+        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
+        self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
+        self.videoViewPlane = QGraphicsView(self.frameMediaPlayer)
+        self.videoViewPlane.setObjectName(u"videoViewPlane")
+        self.videoViewPlane.setInteractive(False)
+        self.videoViewPlane.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+
+        self.verticalLayout_10.addWidget(self.videoViewPlane)
+
 
         self.verticalLayout_7.addWidget(self.frameMediaPlayer)
 
         self.frameMediaInfo = QFrame(self.tabVideo)
         self.frameMediaInfo.setObjectName(u"frameMediaInfo")
-        self.frameMediaInfo.setMaximumSize(QSize(16777215, 109))
+        self.frameMediaInfo.setMaximumSize(QSize(16777215, 90))
         self.frameMediaInfo.setFrameShape(QFrame.StyledPanel)
         self.frameMediaInfo.setFrameShadow(QFrame.Raised)
-        
         self.verticalLayout_8 = QVBoxLayout(self.frameMediaInfo)
         self.verticalLayout_8.setSpacing(0)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.verticalLayout_8.setContentsMargins(0, 0, 0, 0)
-        
         self.frameVideoDescription = QFrame(self.frameMediaInfo)
         self.frameVideoDescription.setObjectName(u"frameVideoDescription")
         self.frameVideoDescription.setMinimumSize(QSize(0, 20))
         self.frameVideoDescription.setMaximumSize(QSize(16777215, 20))
         self.frameVideoDescription.setFrameShape(QFrame.StyledPanel)
         self.frameVideoDescription.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_11 = QHBoxLayout(self.frameVideoDescription)
         self.horizontalLayout_11.setSpacing(0)
         self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
         self.horizontalLayout_11.setContentsMargins(20, 0, 0, 0)
-        
         self.labelVideoName = QLabel(self.frameVideoDescription)
         self.labelVideoName.setObjectName(u"labelVideoName")
         font7 = QFont()
@@ -450,53 +440,26 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_11.addWidget(self.labelVideoName)
 
+
         self.verticalLayout_8.addWidget(self.frameVideoDescription)
 
         self.frameMediaControls = QFrame(self.frameMediaInfo)
         self.frameMediaControls.setObjectName(u"frameMediaControls")
         self.frameMediaControls.setFrameShape(QFrame.StyledPanel)
         self.frameMediaControls.setFrameShadow(QFrame.Raised)
-        
         self.verticalLayout_9 = QVBoxLayout(self.frameMediaControls)
         self.verticalLayout_9.setSpacing(0)
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
-        self.verticalLayout_9.setContentsMargins(5, 10, 5, 5)
-        
+        self.verticalLayout_9.setContentsMargins(5, 0, 5, 0)
         self.frameControlBtns = QFrame(self.frameMediaControls)
         self.frameControlBtns.setObjectName(u"frameControlBtns")
         self.frameControlBtns.setStyleSheet(u"margin-left: auto;\n"
-                                                "margin-right: auto;")
+"margin-right: auto;")
         self.frameControlBtns.setFrameShape(QFrame.NoFrame)
         self.frameControlBtns.setFrameShadow(QFrame.Plain)
-        
         self.horizontalLayout_10 = QHBoxLayout(self.frameControlBtns)
         self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
         self.horizontalLayout_10.setContentsMargins(300, -1, 300, -1)
-        
-        self.btnStop = QPushButton(self.frameControlBtns)
-        self.btnStop.setObjectName(u"btnStop")
-        self.btnStop.setMinimumSize(QSize(30, 30))
-        self.btnStop.setMaximumSize(QSize(30, 30))
-        self.btnStop.setStyleSheet(u"QPushButton {\n"
-"	border: 2px solid rgb(52, 59, 72);\n"
-"	border-radius: 5px;	\n"
-"	background-color: rgb(52, 59, 72);\n"
-"	color: white;\n"
-"}\n"
-"QPushButton:hover {\n"
-"	background-color: rgb(57, 65, 80);\n"
-"	border: 2px solid rgb(61, 70, 86);\n"
-"}\n"
-"QPushButton:pressed {	\n"
-"	background-color: rgb(35, 40, 49);\n"
-"	border: 2px solid rgb(43, 50, 61);\n"
-"}")
-        icon5 = QIcon()
-        icon5.addFile(u":/icons/stop", QSize(), QIcon.Normal, QIcon.Off)
-        self.btnStop.setIcon(icon5)
-
-        self.horizontalLayout_10.addWidget(self.btnStop)
-
         self.btnPlay = QPushButton(self.frameControlBtns)
         self.btnPlay.setObjectName(u"btnPlay")
         self.btnPlay.setMinimumSize(QSize(30, 30))
@@ -515,11 +478,36 @@ class Ui_MainWindow(object):
 "	background-color: rgb(35, 40, 49);\n"
 "	border: 2px solid rgb(43, 50, 61);\n"
 "}")
-        icon6 = QIcon()
-        icon6.addFile(u":/icons/play", QSize(), QIcon.Normal, QIcon.Off)
-        self.btnPlay.setIcon(icon6)
+        icon5 = QIcon()
+        icon5.addFile(u":/icons/play", QSize(), QIcon.Normal, QIcon.Off)
+        self.btnPlay.setIcon(icon5)
 
         self.horizontalLayout_10.addWidget(self.btnPlay)
+
+        self.btnStop = QPushButton(self.frameControlBtns)
+        self.btnStop.setObjectName(u"btnStop")
+        self.btnStop.setMinimumSize(QSize(30, 30))
+        self.btnStop.setMaximumSize(QSize(30, 30))
+        self.btnStop.setStyleSheet(u"QPushButton {\n"
+"	border: 2px solid rgb(52, 59, 72);\n"
+"	border-radius: 5px;	\n"
+"	background-color: rgb(52, 59, 72);\n"
+"	color: white;\n"
+"}\n"
+"QPushButton:hover {\n"
+"	background-color: rgb(57, 65, 80);\n"
+"	border: 2px solid rgb(61, 70, 86);\n"
+"}\n"
+"QPushButton:pressed {	\n"
+"	background-color: rgb(35, 40, 49);\n"
+"	border: 2px solid rgb(43, 50, 61);\n"
+"}")
+        icon6 = QIcon()
+        icon6.addFile(u":/icons/stop", QSize(), QIcon.Normal, QIcon.Off)
+        self.btnStop.setIcon(icon6)
+
+        self.horizontalLayout_10.addWidget(self.btnStop)
+
 
         self.verticalLayout_9.addWidget(self.frameControlBtns)
 
@@ -554,39 +542,39 @@ class Ui_MainWindow(object):
 "border: 1px solid #444;\n"
 "border-radius: 4px;\n"
 "}")
-        self.hSliderVideo.setValue(0)
+        self.hSliderVideo.setValue(10)
         self.hSliderVideo.setOrientation(Qt.Horizontal)
 
         self.verticalLayout_9.addWidget(self.hSliderVideo)
 
+
         self.verticalLayout_8.addWidget(self.frameMediaControls)
+
 
         self.verticalLayout_7.addWidget(self.frameMediaInfo)
 
         self.tabWidget.addTab(self.tabVideo, "")
         self.tabLogs = QWidget()
         self.tabLogs.setObjectName(u"tabLogs")
-        
         self.verticalLayout_4 = QVBoxLayout(self.tabLogs)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        
-        self.textBrowser = QTextBrowser(self.tabLogs)
+        self.textBrowser = QPlainTextEdit(self.tabLogs)
         self.textBrowser.setObjectName(u"textBrowser")
         self.textBrowser.setFont(font2)
         self.textBrowser.setStyleSheet(u"background-color: white; \n"
 "border-radius: 3px;")
+        self.textBrowser.setUndoRedoEnabled(False)
+        self.textBrowser.setReadOnly(True)
 
         self.verticalLayout_4.addWidget(self.textBrowser)
 
         self.tabWidget.addTab(self.tabLogs, "")
         self.tabStats = QWidget()
         self.tabStats.setObjectName(u"tabStats")
-        
         self.verticalLayout_5 = QVBoxLayout(self.tabStats)
         self.verticalLayout_5.setSpacing(10)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.verticalLayout_5.setContentsMargins(10, 50, 10, 50)
-        
         self.statLabel = QLabel(self.tabStats)
         self.statLabel.setObjectName(u"statLabel")
         self.statLabel.setMaximumSize(QSize(16777215, 20))
@@ -600,18 +588,14 @@ class Ui_MainWindow(object):
         self.statBox.setObjectName(u"statBox")
         self.statBox.setFrameShape(QFrame.StyledPanel)
         self.statBox.setFrameShadow(QFrame.Raised)
-        
         self.verticalLayout_6 = QVBoxLayout(self.statBox)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        
         self.frameTotalCount = QFrame(self.statBox)
         self.frameTotalCount.setObjectName(u"frameTotalCount")
         self.frameTotalCount.setFrameShape(QFrame.StyledPanel)
         self.frameTotalCount.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_5 = QHBoxLayout(self.frameTotalCount)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        
         self.labelTotalCountFix = QLabel(self.frameTotalCount)
         self.labelTotalCountFix.setObjectName(u"labelTotalCountFix")
         self.labelTotalCountFix.setFont(font2)
@@ -628,16 +612,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.labelTotalCountVar)
 
+
         self.verticalLayout_6.addWidget(self.frameTotalCount)
 
         self.frameNoPassenger = QFrame(self.statBox)
         self.frameNoPassenger.setObjectName(u"frameNoPassenger")
         self.frameNoPassenger.setFrameShape(QFrame.StyledPanel)
         self.frameNoPassenger.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_8 = QHBoxLayout(self.frameNoPassenger)
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        
         self.labelNoPassFix = QLabel(self.frameNoPassenger)
         self.labelNoPassFix.setObjectName(u"labelNoPassFix")
         self.labelNoPassFix.setFont(font2)
@@ -654,16 +637,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_8.addWidget(self.labelNoPassVar)
 
+
         self.verticalLayout_6.addWidget(self.frameNoPassenger)
 
         self.frameNoCargo = QFrame(self.statBox)
         self.frameNoCargo.setObjectName(u"frameNoCargo")
         self.frameNoCargo.setFrameShape(QFrame.StyledPanel)
         self.frameNoCargo.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_6 = QHBoxLayout(self.frameNoCargo)
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        
         self.labelNoCgoFix = QLabel(self.frameNoCargo)
         self.labelNoCgoFix.setObjectName(u"labelNoCgoFix")
         self.labelNoCgoFix.setFont(font2)
@@ -680,16 +662,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_6.addWidget(self.labelNoCgoVar)
 
+
         self.verticalLayout_6.addWidget(self.frameNoCargo)
 
         self.frameNoMotor = QFrame(self.statBox)
         self.frameNoMotor.setObjectName(u"frameNoMotor")
         self.frameNoMotor.setFrameShape(QFrame.StyledPanel)
         self.frameNoMotor.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_7 = QHBoxLayout(self.frameNoMotor)
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        
         self.labelNoMotorFix = QLabel(self.frameNoMotor)
         self.labelNoMotorFix.setObjectName(u"labelNoMotorFix")
         self.labelNoMotorFix.setFont(font2)
@@ -706,16 +687,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_7.addWidget(self.labelNoMotorVar)
 
+
         self.verticalLayout_6.addWidget(self.frameNoMotor)
 
         self.frameNoUnknown = QFrame(self.statBox)
         self.frameNoUnknown.setObjectName(u"frameNoUnknown")
         self.frameNoUnknown.setFrameShape(QFrame.StyledPanel)
         self.frameNoUnknown.setFrameShadow(QFrame.Raised)
-        
         self.horizontalLayout_9 = QHBoxLayout(self.frameNoUnknown)
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
-        
         self.labelNoUnkFix = QLabel(self.frameNoUnknown)
         self.labelNoUnkFix.setObjectName(u"labelNoUnkFix")
         self.labelNoUnkFix.setFont(font2)
@@ -732,13 +712,16 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_9.addWidget(self.labelNoUnkVar)
 
+
         self.verticalLayout_6.addWidget(self.frameNoUnknown)
+
 
         self.verticalLayout_5.addWidget(self.statBox)
 
         self.tabWidget.addTab(self.tabStats, "")
 
         self.verticalLayout.addWidget(self.tabWidget)
+
 
         self.drop_shadow_layout.addWidget(self.dropShadowFrame)
 
@@ -769,8 +752,8 @@ class Ui_MainWindow(object):
         self.labelTimeLeft.setText(QCoreApplication.translate("MainWindow", u"00:00:00", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabInput), QCoreApplication.translate("MainWindow", u"File", None))
         self.labelVideoName.setText(QCoreApplication.translate("MainWindow", u"Video_name_rendered.mp4", None))
-        self.btnStop.setText("")
         self.btnPlay.setText("")
+        self.btnStop.setText("")
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVideo), QCoreApplication.translate("MainWindow", u"Video", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabLogs), QCoreApplication.translate("MainWindow", u"Logs", None))
         self.statLabel.setText(QCoreApplication.translate("MainWindow", u"Statistics of detected vehicles", None))

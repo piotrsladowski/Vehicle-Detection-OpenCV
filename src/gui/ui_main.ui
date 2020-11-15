@@ -742,6 +742,33 @@ QProgressBar::chunk {
              <property name="frameShadow">
               <enum>QFrame::Raised</enum>
              </property>
+             <layout class="QVBoxLayout" name="verticalLayout_10">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QGraphicsView" name="videoViewPlane">
+                <property name="interactive">
+                 <bool>false</bool>
+                </property>
+                <property name="viewportUpdateMode">
+                 <enum>QGraphicsView::FullViewportUpdate</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -749,7 +776,7 @@ QProgressBar::chunk {
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>109</height>
+               <height>90</height>
               </size>
              </property>
              <property name="frameShape">
@@ -849,13 +876,13 @@ QProgressBar::chunk {
                   <number>5</number>
                  </property>
                  <property name="topMargin">
-                  <number>10</number>
+                  <number>0</number>
                  </property>
                  <property name="rightMargin">
                   <number>5</number>
                  </property>
                  <property name="bottomMargin">
-                  <number>5</number>
+                  <number>0</number>
                  </property>
                  <item>
                   <widget class="QFrame" name="frameControlBtns">
@@ -877,7 +904,7 @@ margin-right: auto;</string>
                      <number>300</number>
                     </property>
                     <item>
-                     <widget class="QPushButton" name="btnStop">
+                     <widget class="QPushButton" name="btnPlay">
                       <property name="minimumSize">
                        <size>
                         <width>30</width>
@@ -916,7 +943,7 @@ QPushButton:pressed {
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="btnPlay">
+                     <widget class="QPushButton" name="btnStop">
                       <property name="minimumSize">
                        <size>
                         <width>30</width>
@@ -1012,7 +1039,7 @@ border-radius: 4px;
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
-            <widget class="QTextBrowser" name="textBrowser">
+            <widget class="QPlainTextEdit" name="textBrowser">
              <property name="font">
               <font>
                <family>Roboto</family>
@@ -1022,6 +1049,12 @@ border-radius: 4px;
              <property name="styleSheet">
               <string notr="true">background-color: white; 
 border-radius: 3px;</string>
+             </property>
+             <property name="undoRedoEnabled">
+              <bool>false</bool>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
              </property>
             </widget>
            </item>

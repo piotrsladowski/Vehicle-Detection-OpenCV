@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #######################################
 # Project: IO_Vehicle_Detection Project
 # Authors: Mateusz Smendowski, Piotr Sladowski, Adam Twardosz

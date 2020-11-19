@@ -15,3 +15,24 @@ __Here you go__ -> make sure to always run `venv` when doing the project</br>
 1. Activate Pipenv environment: `pipenv shell`
 2. Install packages: `pipenv install`
 3. Run app by typing `python ./src/main.py`
+
+## Tensorflow - check if properly installed
+```python
+python -c 'import tensorflow as tf; print(tf.__version__)'
+```
+
+## [ADDITION*] tensorflow-gpu setup
+1. Install `tensorflow` version `2.3.1`
+2. Uninstall current version of  `numpy`
+3. Install `numpy` versoin `1.18.5`
+4. Check your graphics driver is up to date. 
+5. Install `tensorflow gpu` version `*`
+6. Install [`CUDA Toolkit 10.1 update2`](https://developer.nvidia.com/cuda-10.1-download-archive-update2?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exelocal)
+7. Run using cmd: 
+```shell
+SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\bin;%PATH%
+SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\extras\CUPTI\lib64;%PATH%
+SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include;%PATH%
+SET PATH=C:\tools\cuda\bin;%PATH%
+```
+8. PC restart may be necessary to apply changes.

@@ -10,6 +10,7 @@ PySide2 = "==5.15.1"
 numpy = "==1.18.5"
 tensorflow = "==2.3.1"
 matplotlib = "*"
+imutils = "*"
 
 [dev-packages]
 

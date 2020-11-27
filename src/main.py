@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #######################################
 # Project: IO_Vehicle_Detection Project
 # Authors: Mateusz Smendowski, Piotr Sladowski, Adam Twardosz
@@ -6,12 +5,13 @@
 #######################################
 
 import sys
-import os
+from os import path, environ
 import platform
 from PySide2 import QtCore, QtGui
 from PySide2.QtCore import QSize, Qt, QCoreApplication, QUrl
 from PySide2.QtGui import QColor
 from PySide2.QtMultimedia import QMediaContent, QMediaPlayer
+from PySide2.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide2.QtWidgets import *
 
 from gui.ui_main import Ui_MainWindow
@@ -60,14 +60,35 @@ class MainWindow(QMainWindow):
         # PROCESS VIDEO FILE
         self.ui.btnProcess.clicked.connect(self.processVideo)
 
-        # MEDIA PLAYER NOTES
-        # TODO: Use QGraphicsVideoItem instead of QVideoWidget
+        # MEDIA PLAYER
+        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
+        rect = self.ui.frameMediaPlayer.size()
+        print(rect)
+
+        self.videoItem = QGraphicsVideoItem()
+        self.videoItem.videoSurface().surfaceFormat().setPixelAspectRatio(16, 9)
+        print(self.videoItem.videoSurface().surfaceFormat().pixelAspectRatio())
+
+        self.videoScene = QGraphicsScene()
+        self.ui.videoViewPlane.setScene(self.videoScene)
+        self.ui.videoViewPlane.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.videoViewPlane.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.videoViewPlane.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+
+        self.videoScene.addItem(self.videoItem)
+
+        self.mediaPlayer.setVideoOutput(self.videoItem)
+        
         # MEDIA PLAYER HANDLING
-        # self.ui.btnPlay.clicked.connect(self.play_video)
-        # self.ui.btnStop.clicked.connect(self.stop_video)
-        # self.ui.mediaPlayer.positionChanged.connect(self.position_changed)
-        # self.ui.mediaPlayer.durationChanged.connect(self.duration_changed)
+        self.ui.btnPlay.clicked.connect(self.play_video)
+        self.ui.btnStop.clicked.connect(self.stop_video)
+        self.mediaPlayer.positionChanged.connect(self.position_changed)
+        self.mediaPlayer.durationChanged.connect(self.duration_changed)
+        self.ui.hSliderVideo.sliderMoved.connect(self.set_position)
+
+        # LOG BROWSER
+        self.ui.textBrowser.setReadOnly(True)
 
         # CALL THE REST OF THE FEATURES FOR MAIN WINDOW
         self.ui_definitions()
@@ -86,7 +107,7 @@ class MainWindow(QMainWindow):
         else:
             starting_directory = 'HOME'
 
-        fname = QFileDialog.getOpenFileName(self, 'Open Video', os.path.join(os.environ[starting_directory], 'Videos'), "Video Files (*.mp4 *.mkv *.avi)")
+        fname = QFileDialog.getOpenFileName(self, 'Open Video', path.join(environ[starting_directory], 'Videos'), "Video Files (*.mp4 *.mkv *.avi)")
 
         # SET lineEdit TO CHOSEN PATH
         self.ui.lineEdit.setText(fname[0])
@@ -101,18 +122,26 @@ class MainWindow(QMainWindow):
 
             self.whenProcessed(self.ui.lineEdit.text())
 
-    def whenProcessed(self, filename):
+    def whenProcessed(self, fvideo):
         global VIDEO_PROCESSED
         if not VIDEO_PROCESSED:
             self.toggleTabs()
             VIDEO_PROCESSED = True
 
-        # if filename != '':
-        #     self.ui.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(filename)))
-        #     # self.ui.mediaPlayer.setMuted(True)
-        #
-        if os.path.exists('./example.log'):
-            self.ui.textBrowser.setSource(QUrl.fromLocalFile(os.path.abspath('./example.log')))
+        if fvideo != '':
+            self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(fvideo)))
+            self.mediaPlayer.setMuted(True)
+
+        # TODO: make sure to change down here './example.log' for path = 'VIDEO_PATH'+'_logs.log'
+        if path.isfile(path.abspath('./example.log')):
+            logs = []
+            with open(path.abspath('./example.log'), 'r') as f:
+                for line in f:
+                    self.ui.textBrowser.appendPlainText(line)
+                f.close()
+
+        self.ui.videoViewPlane.show()
+        self.fit_vid_to_view(0.98)
 
     # TABS TOGGLING
     def toggleTabs(self):
@@ -130,30 +159,30 @@ class MainWindow(QMainWindow):
             GLOBAL_TABS_ENABLED = True
 
     # MEDIA CONTROL METHODS
-    # def play_video(self):
-    #     if self.ui.mediaPlayer.state() == QMediaPlayer.PlayingState:
-    #         self.ui.mediaPlayer.pause()
-    #         self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/pause"))
-    #         # text = self.ui.mediaPlayer.media(self).canonicalUrl().fileName()
-    #         # self.ui.labelVideoName.setText(text + ' [ paused ]')
-    #     else:
-    #         self.ui.mediaPlayer.play()
-    #         self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/play"))
-    #         # self.ui.labelVideoName.setText(self.ui.mediaPlayer.media().canonicalUrl().fileName())
-    #
-    # def stop_video(self):
-    #     self.ui.mediaPlayer.stop()
-    #     self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/play"))
-    #     self.ui.labelVideoName.setText('')
-    #
-    # def position_changed(self, position):
-    #     self.ui.hSliderVideo.setValue(position)
-    #
-    # def duration_changed(self, duration):
-    #     self.ui.hSliderVideo.setRange(0, duration)
-    #
-    # def set_position(self, position):
-    #     self.ui.mediaPlayer.setPosition(position)
+    def play_video(self):
+        global VIDEO_PATH
+        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
+            self.mediaPlayer.pause()
+            self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/play"))
+            self.ui.labelVideoName.setText(VIDEO_PATH + ' [ paused ]')
+        else:
+            self.mediaPlayer.play()
+            self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/pause"))
+            self.ui.labelVideoName.setText(VIDEO_PATH)
+
+    def stop_video(self):
+        self.mediaPlayer.stop()
+        self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/play"))
+        self.ui.labelVideoName.setText('')
+
+    def position_changed(self, position):
+        self.ui.hSliderVideo.setValue(position)
+
+    def duration_changed(self, duration):
+        self.ui.hSliderVideo.setRange(0, duration)
+
+    def set_position(self, position):
+        self.mediaPlayer.setPosition(position)
 
     # ALLOW WINDOW TO MOVE ON THE SCREEN
     def moveWindow(self, event):
@@ -178,6 +207,7 @@ class MainWindow(QMainWindow):
             self.ui.btnMaximize.setToolTip("Restore")
             self.ui.btnMaximize.setIcon(QtGui.QIcon(u":/icons/res"))
             self.ui.titleLabel.setText("")
+            self.fit_vid_to_view(0.99)
         else:
             GLOBAL_STATE = 0
             self.showNormal()
@@ -186,6 +216,7 @@ class MainWindow(QMainWindow):
             self.ui.btnMaximize.setToolTip("Maximize")
             self.ui.btnMaximize.setIcon(QtGui.QIcon(u":/icons/max"))
             self.ui.titleLabel.setText(TITLE)
+            self.fit_vid_to_view(0.9)
 
     # RETURN STATUS
     def return_status(self):
@@ -194,6 +225,13 @@ class MainWindow(QMainWindow):
     def remove_title_bar(self, status):
         global GLOBAL_TITLE_BAR
         GLOBAL_TITLE_BAR = status
+
+    def fit_vid_to_view(self, scale):
+        vSize = self.ui.videoViewPlane.size()
+        nH = vSize.height()*scale
+        nW = nH/9*16
+        self.videoItem.setSize(QSize(nW, nH))
+        self.ui.videoViewPlane.centerOn(0,0)
 
     def ui_definitions(self):
         def doubleClickMaximizeRestore(event):

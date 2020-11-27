@@ -131,3 +131,6 @@ dmypy.json
 # Ignore VSCode, JetBrains, Atom, SublimeText
 .idea/
 .vscode/
+
+# Ignore model's weights
+src/model/yolov4.weights

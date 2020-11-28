@@ -134,3 +134,6 @@ dmypy.json
 
 # Ignore model's weights
 src/model/yolov4.weights
+
+# Ignore sample input Video to be analyzed
+src/source/sampleVideo.avi

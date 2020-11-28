@@ -5,6 +5,7 @@ import numpy as np
 import os.path
 from imutils.video import FPS
 import imutils
+import asyncio
 
 
 # INITAL PARAMETERS
@@ -20,11 +21,13 @@ ALLOWED_PATHS = {
 }
 
 CLASSES_INTERESTED = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
-
+TOTAL_FRAMES_NUM = 0
 VERSION = 'v1.1'
 
-def main(sourceVideoPath):
-    # TODO: Sprawdzić czy sourceVideoPath istnieje
+async def main(sourceVideoPath):
+    global TOTAL_FRAMES_NUM
+    if not os.path.isfile(sourceVideoPath): return None
+
     classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
     classes = loadClasses(classesName)
 
@@ -37,21 +40,36 @@ def main(sourceVideoPath):
     cap = getVideoCapture(sourceVideoPath)
     TOTAL_FRAMES_NUM = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
     currFilename, currExtenstion = sourceVideoPath.split('.')     
-    outputFile = f"{currFilename}_rendered.{currExtenstion}"
+    outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
+    outputLogFile = f"{currFilename}_rendered.log"
 
-    # TODO: Sprawdzić czy istnieje taki plik outputFile, jeśli tak to usunąć
 
-    vid_writer = cv.VideoWriter(outputFile,
-                cv.VideoWriter_fourcc('M','J','P','G'), 30,
-                (round(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
-                round(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
+    # TODO: asnychroniczna funkcja do zapisywania statysyk
 
-    processCapture(cap, classes, net, vid_writer)
+    vid_writer = cv.VideoWriter(outputVideoFile,
+                cv.VideoWriter_fourcc(*'MJPG'), 30,
+                (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
+                int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
 
-    cap.release()
-    cv.destroyAllWindows()
+    try:
+        if(processCapture(cap, classes, net, vid_writer)):
+            return await outputVideoFile, outputLogFile
+    except Exception:
+        # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
+        return None, None
+    finally:
+        cap.release()
+        cv.destroyAllWindows()
+    
 
-    return 
+    # TODO: Wideo nie zapisuje się poprawnie do pliku, byc może dlateog że jak się przerwie przetwarzanie w trakcie
+
+
+    # Jak już się przrtworzy zwracam ścieżke wideo i logów, dopiero wteyd zakladki 
+    # w GUI dostępne i można przeglądać (?)
+    # Progress bar PyQti?
+
+    # Zapis wideo na multiprocessing ??
     
 
 def loadClasses(path):
@@ -122,6 +140,7 @@ def getVideoCapture(path):
         return cv.VideoCapture(path)
 
 def processCapture(cap, classes, net, vid_writer):
+    exit_status = 1
     fps = FPS().start()
     while cv.waitKey(1) < 0:
         
@@ -131,6 +150,9 @@ def processCapture(cap, classes, net, vid_writer):
         frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         frame = np.dstack([frame, frame, frame])
 
+        # Processing has beed properly ended
+        if not grabbed:
+            exit_status = 0
         #print(f"Progress: {int(cap.get(cv2.CAP_PROP_POS_FRAMES))/TOTAL_FRAMES_NUM}")
         #print(f"Frames per second: {int(cv.CAP_PROP_FPS)}")
         
@@ -152,7 +174,7 @@ def processCapture(cap, classes, net, vid_writer):
         fps.update()
 
     fps.stop()
-
+    return exit_status
 
 if __name__ == "__main__": 
-    main("source/okej.avi")
+    renderedVideoPath, renderedLogsPath = asyncio.run(main("source/sampleVideo.avi"))

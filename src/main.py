@@ -15,6 +15,7 @@ from PySide2.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide2.QtWidgets import *
 
 from gui.ui_main import Ui_MainWindow
+from vehicle_detection import VideoProcessor
 import gui.all_icons_rc
 
 
@@ -23,8 +24,8 @@ GLOBAL_STATE = 0
 GLOBAL_TITLE_BAR = True
 GLOBAL_TABS_ENABLED = True
 TITLE = "IO Vehicle Detection"
-VIDEO_PROCESSED = False
 VIDEO_PATH = ''
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -117,31 +118,46 @@ class MainWindow(QMainWindow):
         if self.ui.lineEdit.text() != '':
             print("Processing video " + self.ui.lineEdit.text())
             VIDEO_PATH = self.ui.lineEdit.text()
-            # TODO: func.processVideo specify function where the Video_file is processed
-            # TODO: func.processVideo update progressBar whit percent
 
-            self.whenProcessed(self.ui.lineEdit.text())
+            self.processor = VideoProcessor(self.ui.progressBar)
+            self.processor.on_data_finish.connect(self.on_processor_finish)
+            self.processor.start(VIDEO_PATH)
 
-    def whenProcessed(self, fvideo):
-        global VIDEO_PROCESSED
-        if not VIDEO_PROCESSED:
+    # AFTER VIDEO PROCESSING METHOD
+    def on_processor_finish(self, done, fvideo, flog, stats):
+        """
+        :param done:
+        :param fvideo:
+        :param flog:
+        :param stats: dict("total_vehicles": int, "light_vehicles": int, "heavy_vehicles": int, "two_wheel_vehicles": int, "unknown_vehicles": int)
+        """
+
+        if not done:
+            if type(fvideo) == str and fvideo != '':
+                self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(fvideo)))
+                self.mediaPlayer.setMuted(True)
+
+            if type(fvideo) == str and flog != '':
+                with open(flog, 'r') as f:
+                    for line in f:
+                        self.ui.textBrowser.appendPlainText(line)
+                    f.close()
+
+            self.ui.videoViewPlane.show()
+            self.fit_vid_to_view(0.98)
+
+            if type(stats) == dict and stats not None:
+                self.print_stats(stats)
+
             self.toggleTabs()
-            VIDEO_PROCESSED = True
 
-        if fvideo != '':
-            self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(fvideo)))
-            self.mediaPlayer.setMuted(True)
-
-        # TODO: make sure to change down here './example.log' for path = 'VIDEO_PATH'+'_logs.log'
-        if path.isfile(path.abspath('./example.log')):
-            logs = []
-            with open(path.abspath('./example.log'), 'r') as f:
-                for line in f:
-                    self.ui.textBrowser.appendPlainText(line)
-                f.close()
-
-        self.ui.videoViewPlane.show()
-        self.fit_vid_to_view(0.98)
+    # PRINT STATISTICS TO STATS_TAB
+    def print_stats(self, stats):
+        self.ui.labelTotalCountVar.setText(stats["total_vehicles"])
+        self.ui.labelNoPassVar.setText(stats["light_vehicles"])
+        self.ui.labelNoCgoVar.setText(stats["light_vehicles"])
+        self.ui.labelNoMotorVar.setText(stats["light_vehicles"])
+        self.ui.labelNoUnkVar.setText(stats["light_vehicles"])
 
     # TABS TOGGLING
     def toggleTabs(self):
@@ -231,7 +247,7 @@ class MainWindow(QMainWindow):
         nH = vSize.height()*scale
         nW = nH/9*16
         self.videoItem.setSize(QSize(nW, nH))
-        self.ui.videoViewPlane.centerOn(0,0)
+        self.ui.videoViewPlane.centerOn(0, 0)
 
     def ui_definitions(self):
         def doubleClickMaximizeRestore(event):

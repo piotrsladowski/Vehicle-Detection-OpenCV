@@ -119,9 +119,9 @@ class MainWindow(QMainWindow):
             print("Processing video " + self.ui.lineEdit.text())
             VIDEO_PATH = self.ui.lineEdit.text()
 
-            self.processor = VideoProcessor(self.ui.progressBar)
+            self.processor = VideoProcessor(self.ui.progressBar, VIDEO_PATH)
             self.processor.on_data_finish.connect(self.on_processor_finish)
-            self.processor.start(VIDEO_PATH)
+            self.processor.start()
 
     # AFTER VIDEO PROCESSING METHOD
     def on_processor_finish(self, done, fvideo, flog, stats):
@@ -133,11 +133,11 @@ class MainWindow(QMainWindow):
         """
 
         if not done:
-            if type(fvideo) == str and fvideo != '':
+            if type(fvideo) == str and fvideo is not None:
                 self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(fvideo)))
                 self.mediaPlayer.setMuted(True)
 
-            if type(fvideo) == str and flog != '':
+            if type(fvideo) == str and flog is not None:
                 with open(flog, 'r') as f:
                     for line in f:
                         self.ui.textBrowser.appendPlainText(line)
@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
             self.ui.videoViewPlane.show()
             self.fit_vid_to_view(0.98)
 
-            if type(stats) == dict and stats not None:
+            if type(stats) == dict and stats is not None:
                 self.print_stats(stats)
 
             self.toggleTabs()

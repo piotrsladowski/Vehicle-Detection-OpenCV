@@ -7,29 +7,35 @@ from imutils.video import FPS
 import imutils
 import asyncio
 from PySide2 import QtCore
-from PySide2.QtCore import QThread, pyqtSignal
+from PySide2.QtCore import QThread, Signal
 
 
 # INITAL PARAMETERS
-confThreshold = 0.85  #Confidence threshold
-nmsThreshold = 0.4    #Non-maximum suppression threshold
-inpWidth = 320        #Width of network's input image
-inpHeight = 320       #Height of network's input image
+confThreshold = 0.85  # Confidence threshold
+nmsThreshold = 0.4    # Non-maximum suppression threshold
+inpWidth = 320        # Width of network's input image
+inpHeight = 320       # Height of network's input image
 
 ALLOWED_PATHS = {
-    "classesPath": "model/classes.names",
-    "modelConfigurationPath": "model/yolov4.cfg",
-    "modelWeightsPath": "model/yolov4.weights",
+    "classesPath": "src/model/classes.names",
+    "modelConfigurationPath": "src/model/yolov4.cfg",
+    "modelWeightsPath": "src/model/yolov4.weights",
 }
 
 CLASSES_INTERESTED = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
 VERSION = 'v1.1'
 # TODO: Przerobić ładnie na selfy
 
+
 class VideoProcessor(QThread):
-    def __init__(self, progressBar):
+
+    frame_progress = Signal()
+    on_data_finish = Signal()
+
+    def __init__(self, progressBar, sourceVideoPath):
+        super().__init__()
         self.progressBar = progressBar
-        self.frame_progress = pyqtSignal(object)
+        self.sourceVideoPath = sourceVideoPath
         self.statistics = {
             "total_vehicles": 0,
             "light_vehicles": 0,
@@ -38,10 +44,9 @@ class VideoProcessor(QThread):
             "unknown_vehicles": 0
         }
 
+    def run(self):
+        if not os.path.isfile(self.sourceVideoPath): return None
 
-    def run(self, sourceVideoPath):
-        if not os.path.isfile(sourceVideoPath): return None
-        
         classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
         classes = self.loadClasses(classesName)
 
@@ -50,12 +55,13 @@ class VideoProcessor(QThread):
         net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
         windowName = f"Vehicle Detector {VERSION}"
         cv.namedWindow(windowName, cv.WINDOW_NORMAL)
-    
-        cap = self.getVideoCapture(sourceVideoPath)
+
+        cap = self.getVideoCapture(self.sourceVideoPath)
         self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
-        currFilename, currExtenstion = sourceVideoPath.split('.')     
+        currFilename, currExtenstion = self.sourceVideoPath.split('.')     
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
-        outputLogFile = f"{currFilename}_rendered.log"
+        # outputLogFile = f"{currFilename}_rendered.log"
+        outputLogFile = os.path.abspath("./example.log")
 
         vid_writer = cv.VideoWriter(outputVideoFile,
                     cv.VideoWriter_fourcc(*'MJPG'), 30,
@@ -64,17 +70,15 @@ class VideoProcessor(QThread):
 
         try:
             if self.processCapture(cap, classes, net, vid_writer) == 0:
-                return True, outputVideoFile, outputLogFile, self.statistics
+                self.on_data_finish.emit(True, outputVideoFile, outputLogFile, self.statistics)
         except Exception:
             # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
-            return False, None, None, None
+            self.on_data_finish.emit(False, None, None, None)
         finally:
             cap.release()
             cv.destroyAllWindows()
-        
 
         # TODO: Wideo nie zapisuje się poprawnie do pliku, byc może dlateog że jak się przerwie przetwarzanie w trakcie
-        
 
     def loadClasses(self, path):
         if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
@@ -90,14 +94,13 @@ class VideoProcessor(QThread):
         if classes[classId] not in CLASSES_INTERESTED: return
 
         cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
-        
+
         label = '%.2f' % conf
-        
+
         if classes:
-            #print(f"classID: {classId}") -> Statystyki
+            # print(f"classID: {classId}") -> Statystyki
             label = '%s:%s' % (classes[classId], label) if classes[classId] in CLASSES_INTERESTED else None
 
-        
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         top = max(top, labelSize[1])
         cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine), (255, 255, 255), cv.FILLED)
@@ -147,7 +150,7 @@ class VideoProcessor(QThread):
         exit_status = 1
         fps = FPS().start()
         while cv.waitKey(1) < 0:
-            
+
             grabbed, frame = cap.read()
 
             frame = imutils.resize(frame, width=1080)
@@ -159,12 +162,12 @@ class VideoProcessor(QThread):
                 exit_status = 0
 
             self.progressBar.setValue(int(cap.get(cv.CAP_PROP_POS_FRAMES)))
-            #print(f"Progress: {int(cap.get(cv2.CAP_PROP_POS_FRAMES))/TOTAL_FRAMES_NUM}")
-            #print(f"Frames per second: {int(cv.CAP_PROP_FPS)}")
-            
+            # print(f"Progress: {int(cap.get(cv2.CAP_PROP_POS_FRAMES))/TOTAL_FRAMES_NUM}")
+            # print(f"Frames per second: {int(cv.CAP_PROP_FPS)}")
+
             if (cv.waitKey(20) & 0xFF == ord('q')) or not grabbed:
                 break
-            
+
             blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False) 
 
             net.setInput(blob)
@@ -175,12 +178,12 @@ class VideoProcessor(QThread):
 
             vid_writer.write(frame.astype(np.uint8))
 
-            #cv.imshow("Frame", frame)
-            #cv.waitKey(1)
+            # cv.imshow("Frame", frame)
+            # cv.waitKey(1)
             fps.update()
 
         fps.stop()
         return exit_status
 
-#if __name__ == "__main__": 
+# if __name__ == "__main__":
 #    renderedVideoPath, renderedLogsPath = asyncio.run(main("source/sampleVideo.avi"))

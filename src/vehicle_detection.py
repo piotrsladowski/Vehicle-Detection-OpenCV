@@ -6,6 +6,8 @@ import os.path
 from imutils.video import FPS
 import imutils
 import asyncio
+from PySide2 import QtCore
+from PySide2.QtCore import QThread, pyqtSignal
 
 
 # INITAL PARAMETERS
@@ -21,160 +23,164 @@ ALLOWED_PATHS = {
 }
 
 CLASSES_INTERESTED = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
-TOTAL_FRAMES_NUM = 0
 VERSION = 'v1.1'
+# TODO: Przerobić ładnie na selfy
 
-async def main(sourceVideoPath):
-    global TOTAL_FRAMES_NUM
-    if not os.path.isfile(sourceVideoPath): return None
-
-    classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
-    classes = loadClasses(classesName)
-
-    net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
-    net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
-    net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
-    windowName = f"Vehicle Detector {VERSION}"
-    cv.namedWindow(windowName, cv.WINDOW_NORMAL)
- 
-    cap = getVideoCapture(sourceVideoPath)
-    TOTAL_FRAMES_NUM = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-    currFilename, currExtenstion = sourceVideoPath.split('.')     
-    outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
-    outputLogFile = f"{currFilename}_rendered.log"
+class VideoProcessor(QThread):
+    def __init__(self, progressBar):
+        self.progressBar = progressBar
+        self.frame_progress = pyqtSignal(object)
+        self.statistics = {
+            "total_vehicles": 0,
+            "light_vehicles": 0,
+            "heavy_vehicles": 0,
+            "two_wheel_vehicles": 0,
+            "unknown_vehicles": 0
+        }
 
 
-    # TODO: asnychroniczna funkcja do zapisywania statysyk
-
-    vid_writer = cv.VideoWriter(outputVideoFile,
-                cv.VideoWriter_fourcc(*'MJPG'), 30,
-                (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
-                int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
-
-    try:
-        if(processCapture(cap, classes, net, vid_writer)):
-            return await outputVideoFile, outputLogFile
-    except Exception:
-        # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
-        return None, None
-    finally:
-        cap.release()
-        cv.destroyAllWindows()
-    
-
-    # TODO: Wideo nie zapisuje się poprawnie do pliku, byc może dlateog że jak się przerwie przetwarzanie w trakcie
-
-
-    # Jak już się przrtworzy zwracam ścieżke wideo i logów, dopiero wteyd zakladki 
-    # w GUI dostępne i można przeglądać (?)
-    # Progress bar PyQti?
-
-    # Zapis wideo na multiprocessing ??
-    
-
-def loadClasses(path):
-    if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
-        with open(path, 'rt') as f:
-            return f.read().rstrip('\n').split('\n')
-    return None
-
-def getOutputsNames(network):
-    layersNames = network.getLayerNames()
-    return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
-
-def drawPred(frame, classes, classId, conf, left, top, right, bottom):
-    if classes[classId] not in CLASSES_INTERESTED: return
-
-    cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
-    
-    label = '%.2f' % conf
-      
-    if classes:
-        #print(f"classID: {classId}") -> Statystyki
-        label = '%s:%s' % (classes[classId], label) if classes[classId] in CLASSES_INTERESTED else None
-
-    
-    labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-    top = max(top, labelSize[1])
-    cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine), (255, 255, 255), cv.FILLED)
-    cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,0), 1)
-
-def postProcess(frame, classes, outs):
-    frameHeight = frame.shape[0]
-    frameWidth = frame.shape[1]
-
-    classIds = []
-    confidences = []
-    boxes = []
-
-    for out in outs:
-        for detection in out:
-            scores = detection[5:]
-            classId = np.argmax(scores)
-            confidence = scores[classId]
-            if confidence > confThreshold:
-                center_x = int(detection[0] * frameWidth)
-                center_y = int(detection[1] * frameHeight)
-                width = int(detection[2] * frameWidth)
-                height = int(detection[3] * frameHeight)
-                left = int(center_x - width / 2)
-                top = int(center_y - height / 2)
-                classIds.append(classId)
-                confidences.append(float(confidence))
-                boxes.append([left, top, width, height])
-
-    indices = cv.dnn.NMSBoxes(boxes, confidences, confThreshold, nmsThreshold)
-    for i in indices:
-        i = i[0]
-        box = boxes[i]
-        left = box[0]
-        top = box[1]
-        width = box[2]
-        height = box[3]
-        drawPred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
-
-def getVideoCapture(path):
-    if not os.path.isfile(path):
-        sys.exit(1)
-    else:
-        return cv.VideoCapture(path)
-
-def processCapture(cap, classes, net, vid_writer):
-    exit_status = 1
-    fps = FPS().start()
-    while cv.waitKey(1) < 0:
+    def run(self, sourceVideoPath):
+        if not os.path.isfile(sourceVideoPath): return None
         
-        grabbed, frame = cap.read()
+        classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
+        classes = self.loadClasses(classesName)
 
-        frame = imutils.resize(frame, width=1080)
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        frame = np.dstack([frame, frame, frame])
+        net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
+        net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
+        net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
+        windowName = f"Vehicle Detector {VERSION}"
+        cv.namedWindow(windowName, cv.WINDOW_NORMAL)
+    
+        cap = self.getVideoCapture(sourceVideoPath)
+        self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
+        currFilename, currExtenstion = sourceVideoPath.split('.')     
+        outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
+        outputLogFile = f"{currFilename}_rendered.log"
 
-        # Processing has beed properly ended
-        if not grabbed:
-            exit_status = 0
-        #print(f"Progress: {int(cap.get(cv2.CAP_PROP_POS_FRAMES))/TOTAL_FRAMES_NUM}")
-        #print(f"Frames per second: {int(cv.CAP_PROP_FPS)}")
+        vid_writer = cv.VideoWriter(outputVideoFile,
+                    cv.VideoWriter_fourcc(*'MJPG'), 30,
+                    (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
+                    int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
+
+        try:
+            if self.processCapture(cap, classes, net, vid_writer) == 0:
+                return True, outputVideoFile, outputLogFile, self.statistics
+        except Exception:
+            # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
+            return False, None, None, None
+        finally:
+            cap.release()
+            cv.destroyAllWindows()
         
-        if (cv.waitKey(20) & 0xFF == ord('q')) or not grabbed:
-            break
+
+        # TODO: Wideo nie zapisuje się poprawnie do pliku, byc może dlateog że jak się przerwie przetwarzanie w trakcie
         
-        blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False) 
 
-        net.setInput(blob)
+    def loadClasses(self, path):
+        if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
+            with open(path, 'rt') as f:
+                return f.read().rstrip('\n').split('\n')
+        return None
 
-        outs = net.forward(getOutputsNames(net))
+    def getOutputsNames(self, network):
+        layersNames = network.getLayerNames()
+        return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
 
-        postProcess(frame, classes, outs)
+    def drawPred(self, frame, classes, classId, conf, left, top, right, bottom):
+        if classes[classId] not in CLASSES_INTERESTED: return
 
-        vid_writer.write(frame.astype(np.uint8))
+        cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
+        
+        label = '%.2f' % conf
+        
+        if classes:
+            #print(f"classID: {classId}") -> Statystyki
+            label = '%s:%s' % (classes[classId], label) if classes[classId] in CLASSES_INTERESTED else None
 
-        cv.imshow("Frame", frame)
-        cv.waitKey(1)
-        fps.update()
+        
+        labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        top = max(top, labelSize[1])
+        cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine), (255, 255, 255), cv.FILLED)
+        cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,0), 1)
 
-    fps.stop()
-    return exit_status
+    def postProcess(self, frame, classes, outs):
+        frameHeight = frame.shape[0]
+        frameWidth = frame.shape[1]
 
-if __name__ == "__main__": 
-    renderedVideoPath, renderedLogsPath = asyncio.run(main("source/sampleVideo.avi"))
+        classIds = []
+        confidences = []
+        boxes = []
+
+        for out in outs:
+            for detection in out:
+                scores = detection[5:]
+                classId = np.argmax(scores)
+                confidence = scores[classId]
+                if confidence > confThreshold:
+                    center_x = int(detection[0] * frameWidth)
+                    center_y = int(detection[1] * frameHeight)
+                    width = int(detection[2] * frameWidth)
+                    height = int(detection[3] * frameHeight)
+                    left = int(center_x - width / 2)
+                    top = int(center_y - height / 2)
+                    classIds.append(classId)
+                    confidences.append(float(confidence))
+                    boxes.append([left, top, width, height])
+
+        indices = cv.dnn.NMSBoxes(boxes, confidences, confThreshold, nmsThreshold)
+        for i in indices:
+            i = i[0]
+            box = boxes[i]
+            left = box[0]
+            top = box[1]
+            width = box[2]
+            height = box[3]
+            self.drawPreddrawPred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
+
+    def getVideoCapture(self, path):
+        if not os.path.isfile(path):
+            sys.exit(1)
+        else:
+            return cv.VideoCapture(path)
+
+    def processCapture(self, cap, classes, net, vid_writer):
+        exit_status = 1
+        fps = FPS().start()
+        while cv.waitKey(1) < 0:
+            
+            grabbed, frame = cap.read()
+
+            frame = imutils.resize(frame, width=1080)
+            frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            frame = np.dstack([frame, frame, frame])
+
+            # Processing has beed properly ended
+            if not grabbed:
+                exit_status = 0
+
+            self.progressBar.setValue(int(cap.get(cv.CAP_PROP_POS_FRAMES)))
+            #print(f"Progress: {int(cap.get(cv2.CAP_PROP_POS_FRAMES))/TOTAL_FRAMES_NUM}")
+            #print(f"Frames per second: {int(cv.CAP_PROP_FPS)}")
+            
+            if (cv.waitKey(20) & 0xFF == ord('q')) or not grabbed:
+                break
+            
+            blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False) 
+
+            net.setInput(blob)
+
+            outs = net.forward(self.getOutputsNames(net))
+
+            self.postProcess(frame, classes, outs)
+
+            vid_writer.write(frame.astype(np.uint8))
+
+            #cv.imshow("Frame", frame)
+            #cv.waitKey(1)
+            fps.update()
+
+        fps.stop()
+        return exit_status
+
+#if __name__ == "__main__": 
+#    renderedVideoPath, renderedLogsPath = asyncio.run(main("source/sampleVideo.avi"))

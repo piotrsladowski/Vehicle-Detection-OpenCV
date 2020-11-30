@@ -38,3 +38,6 @@ SET PATH=C:\tools\cuda\bin;%PATH%
 8. PC restart may be necessary to apply changes.
 
 ## [yolov4.weights](https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights) - Download and place in the "model" directory
+
+
+## [Install K-Lite Codec Pack](https://files3.codecguide.com/K-Lite_Codec_Pack_1590_Standard.exe)

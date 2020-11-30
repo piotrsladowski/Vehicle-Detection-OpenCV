@@ -142,4 +142,4 @@ src/source/sampleVideo.mp4
 src/source/sampleVideo_rendered.mp4
 
 # Ignore libvlc.dll
-libvlc.dll
+dlls/libvlc.dll

@@ -70,9 +70,6 @@ class VideoProcessor(QThread):
         except Exception:
             # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
             self.on_data_finish.emit({"done": False, "outVideo": None, "outLog": None, "stats": None})
-        finally:
-            cap.release()
-            cv.destroyAllWindows()
 
     def loadClasses(self, path):
         if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
@@ -170,4 +167,6 @@ class VideoProcessor(QThread):
             fps.update()
             
         fps.stop()
+        cap.release()
+        cv.destroyAllWindows()
         return exit_status

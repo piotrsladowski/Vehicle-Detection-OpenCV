@@ -8,7 +8,7 @@ import sys
 from os import path, environ
 import platform
 from PySide2 import QtCore, QtGui
-from PySide2.QtCore import QSize, Qt, QCoreApplication, QUrl
+from PySide2.QtCore import QSize, Qt, QCoreApplication, QUrl, Slot
 from PySide2.QtGui import QColor
 from PySide2.QtMultimedia import QMediaContent, QMediaPlayer
 from PySide2.QtMultimediaWidgets import QGraphicsVideoItem
@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         # MAIN WINDOW SETUP
         self.setWindowTitle(QCoreApplication.translate("MainWindow", u"IO_VD Application", None))
         self.setWindowIcon(QtGui.QIcon(u":/icons/car_logo"))
-        self.remove_title_bar(True)
+        self.removeTitleBar(True)
 
         # INITIAL SIZE SETTINGS
         startSize = QSize(800, 600)
@@ -64,12 +64,7 @@ class MainWindow(QMainWindow):
         # MEDIA PLAYER
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
-        rect = self.ui.frameMediaPlayer.size()
-        print(rect)
-
         self.videoItem = QGraphicsVideoItem()
-        self.videoItem.videoSurface().surfaceFormat().setPixelAspectRatio(16, 9)
-        print(self.videoItem.videoSurface().surfaceFormat().pixelAspectRatio())
 
         self.videoScene = QGraphicsScene()
         self.ui.videoViewPlane.setScene(self.videoScene)
@@ -82,17 +77,17 @@ class MainWindow(QMainWindow):
         self.mediaPlayer.setVideoOutput(self.videoItem)
         
         # MEDIA PLAYER HANDLING
-        self.ui.btnPlay.clicked.connect(self.play_video)
-        self.ui.btnStop.clicked.connect(self.stop_video)
-        self.mediaPlayer.positionChanged.connect(self.position_changed)
-        self.mediaPlayer.durationChanged.connect(self.duration_changed)
-        self.ui.hSliderVideo.sliderMoved.connect(self.set_position)
+        self.ui.btnPlay.clicked.connect(self.playVideo)
+        self.ui.btnStop.clicked.connect(self.stopVideo)
+        self.mediaPlayer.positionChanged.connect(self.positionChanged)
+        self.mediaPlayer.durationChanged.connect(self.durationChanged)
+        self.ui.hSliderVideo.sliderMoved.connect(self.setPosition)
 
         # LOG BROWSER
         self.ui.textBrowser.setReadOnly(True)
 
         # CALL THE REST OF THE FEATURES FOR MAIN WINDOW
-        self.ui_definitions()
+        self.UIDefinitions()
 
         # SHOW MainWindow()
         self.show()
@@ -108,7 +103,7 @@ class MainWindow(QMainWindow):
         else:
             starting_directory = 'HOME'
 
-        fname = QFileDialog.getOpenFileName(self, 'Open Video', path.join(environ[starting_directory], 'Videos'), "Video Files (*.mp4 *.mkv *.avi)")
+        fname = QFileDialog.getOpenFileName(self, 'Choose Video', path.join(environ[starting_directory], 'Videos'), "Video Files (*.mp4 *.mkv *.avi)")
 
         # SET lineEdit TO CHOSEN PATH
         self.ui.lineEdit.setText(fname[0])
@@ -116,15 +111,19 @@ class MainWindow(QMainWindow):
     def processVideo(self):
         global VIDEO_PATH
         if self.ui.lineEdit.text() != '':
+            self.ui.btnProcess.setEnabled(False)
+
             print("Processing video " + self.ui.lineEdit.text())
             VIDEO_PATH = self.ui.lineEdit.text()
 
             self.processor = VideoProcessor(self.ui.progressBar, VIDEO_PATH)
             self.processor.on_data_finish.connect(self.on_processor_finish)
             self.processor.start()
+        else:
+            print("No video selected")
 
     # AFTER VIDEO PROCESSING METHOD
-    def on_processor_finish(self, done, fvideo, flog, stats):
+    def on_processor_finish(self, output):
         """
         :param done:
         :param fvideo:
@@ -132,27 +131,28 @@ class MainWindow(QMainWindow):
         :param stats: dict("total_vehicles": int, "light_vehicles": int, "heavy_vehicles": int, "two_wheel_vehicles": int, "unknown_vehicles": int)
         """
 
-        if not done:
-            if type(fvideo) == str and fvideo is not None:
-                self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(fvideo)))
+        if output["done"]:
+            print("Done processing, enabling postprocessing info!")
+            self.toggleTabs()
+
+            if type(output["outVideo"]) == str and output["outVideo"] is not None:
+                self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(output["outVideo"])))
                 self.mediaPlayer.setMuted(True)
 
-            if type(fvideo) == str and flog is not None:
-                with open(flog, 'r') as f:
+            if type(output["outLog"]) == str and output["outLog"] is not None:
+                with open(output["outLog"], 'r') as f:
                     for line in f:
                         self.ui.textBrowser.appendPlainText(line)
                     f.close()
 
             self.ui.videoViewPlane.show()
-            self.fit_vid_to_view(0.98)
+            self.fitVideoToGView(0.98)
 
-            if type(stats) == dict and stats is not None:
-                self.print_stats(stats)
-
-            self.toggleTabs()
+            if type(output["stats"]) == dict and output["stats"] is not None:
+                self.printStatistics(output["stats"])
 
     # PRINT STATISTICS TO STATS_TAB
-    def print_stats(self, stats):
+    def printStatistics(self, stats):
         self.ui.labelTotalCountVar.setText(stats["total_vehicles"])
         self.ui.labelNoPassVar.setText(stats["light_vehicles"])
         self.ui.labelNoCgoVar.setText(stats["light_vehicles"])
@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
             GLOBAL_TABS_ENABLED = True
 
     # MEDIA CONTROL METHODS
-    def play_video(self):
+    def playVideo(self):
         global VIDEO_PATH
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
             self.mediaPlayer.pause()
@@ -186,25 +186,25 @@ class MainWindow(QMainWindow):
             self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/pause"))
             self.ui.labelVideoName.setText(VIDEO_PATH)
 
-    def stop_video(self):
+    def stopVideo(self):
         self.mediaPlayer.stop()
         self.ui.btnPlay.setIcon(QtGui.QIcon(u":/icons/play"))
         self.ui.labelVideoName.setText('')
 
-    def position_changed(self, position):
+    def positionChanged(self, position):
         self.ui.hSliderVideo.setValue(position)
 
-    def duration_changed(self, duration):
+    def durationChanged(self, duration):
         self.ui.hSliderVideo.setRange(0, duration)
 
-    def set_position(self, position):
+    def setPosition(self, position):
         self.mediaPlayer.setPosition(position)
 
     # ALLOW WINDOW TO MOVE ON THE SCREEN
     def moveWindow(self, event):
         # IF MAXIMIZED CHANGE TO NORMAL
-        if self.return_status == 1:
-            self.maximize_restore()
+        if self.returnStatus == 1:
+            self.maximizeOrRestore()
         # MOVE WINDOW
         if event.buttons() == Qt.LeftButton:
             self.move(self.pos() + event.globalPos() - self.dragPos)
@@ -212,7 +212,7 @@ class MainWindow(QMainWindow):
             event.accept()
 
     # MAXIMIZE/RESTORE
-    def maximize_restore(self):
+    def maximizeOrRestore(self):
         global GLOBAL_STATE
         global TITLE
         status = GLOBAL_STATE
@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
             self.ui.btnMaximize.setToolTip("Restore")
             self.ui.btnMaximize.setIcon(QtGui.QIcon(u":/icons/res"))
             self.ui.titleLabel.setText("")
-            self.fit_vid_to_view(0.99)
+            self.fitVideoToGView(0.99)
         else:
             GLOBAL_STATE = 0
             self.showNormal()
@@ -232,28 +232,28 @@ class MainWindow(QMainWindow):
             self.ui.btnMaximize.setToolTip("Maximize")
             self.ui.btnMaximize.setIcon(QtGui.QIcon(u":/icons/max"))
             self.ui.titleLabel.setText(TITLE)
-            self.fit_vid_to_view(0.9)
+            self.fitVideoToGView(0.9)
 
     # RETURN STATUS
-    def return_status(self):
+    def returnStatus(self):
         return GLOBAL_STATE
 
-    def remove_title_bar(self, status):
+    def removeTitleBar(self, status):
         global GLOBAL_TITLE_BAR
         GLOBAL_TITLE_BAR = status
 
-    def fit_vid_to_view(self, scale):
+    def fitVideoToGView(self, scale):
         vSize = self.ui.videoViewPlane.size()
         nH = vSize.height()*scale
         nW = nH/9*16
         self.videoItem.setSize(QSize(nW, nH))
         self.ui.videoViewPlane.centerOn(0, 0)
 
-    def ui_definitions(self):
+    def UIDefinitions(self):
         def doubleClickMaximizeRestore(event):
             # IF DOUBLE CLICK CHANGE STATUS
             if event.type() == QtCore.QEvent.MouseButtonDblClick:
-                QtCore.QTimer.singleShot(250, lambda: self.maximize_restore())
+                QtCore.QTimer.singleShot(250, lambda: self.maximizeOrRestore())
 
         # STANDARD TITLE BAR
         if GLOBAL_TITLE_BAR:
@@ -276,7 +276,7 @@ class MainWindow(QMainWindow):
         self.ui.btnMinimize.clicked.connect(lambda: self.showMinimized())
 
         # MAXIMIZE/RESTORE
-        self.ui.btnMaximize.clicked.connect(lambda: self.maximize_restore())
+        self.ui.btnMaximize.clicked.connect(lambda: self.maximizeOrRestore())
 
         # CLOSE APPLICATION
         self.ui.btnClose.clicked.connect(lambda: self.close())

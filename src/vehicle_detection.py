@@ -24,13 +24,12 @@ ALLOWED_PATHS = {
 
 CLASSES_INTERESTED = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
 VERSION = 'v1.1'
-# TODO: Przerobić ładnie na selfy
 
 
 class VideoProcessor(QThread):
 
-    frame_progress = Signal()
-    on_data_finish = Signal()
+    # frame_progress = Signal()
+    on_data_finish = Signal(dict)
 
     def __init__(self, progressBar, sourceVideoPath):
         super().__init__()
@@ -45,7 +44,8 @@ class VideoProcessor(QThread):
         }
 
     def run(self):
-        if not os.path.isfile(self.sourceVideoPath): return None
+        if not os.path.isfile(self.sourceVideoPath):
+            return None
 
         classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
         classes = self.loadClasses(classesName)
@@ -70,10 +70,10 @@ class VideoProcessor(QThread):
 
         try:
             if self.processCapture(cap, classes, net, vid_writer) == 0:
-                self.on_data_finish.emit(True, outputVideoFile, outputLogFile, self.statistics)
+                self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
         except Exception:
             # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
-            self.on_data_finish.emit(False, None, None, None)
+            self.on_data_finish.emit({"done": False, "outVideo": None, "outLog": None, "stats": None})
         finally:
             cap.release()
             cv.destroyAllWindows()
@@ -91,7 +91,8 @@ class VideoProcessor(QThread):
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
 
     def drawPred(self, frame, classes, classId, conf, left, top, right, bottom):
-        if classes[classId] not in CLASSES_INTERESTED: return
+        if classes[classId] not in CLASSES_INTERESTED:
+            return None
 
         cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
 
@@ -138,7 +139,7 @@ class VideoProcessor(QThread):
             top = box[1]
             width = box[2]
             height = box[3]
-            self.drawPreddrawPred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
+            self.drawPred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
 
     def getVideoCapture(self, path):
         if not os.path.isfile(path):

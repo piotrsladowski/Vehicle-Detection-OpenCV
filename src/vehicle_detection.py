@@ -9,7 +9,6 @@ import asyncio
 from PySide2 import QtCore
 from PySide2.QtCore import QThread, Signal
 
-
 # INITAL PARAMETERS
 confThreshold = 0.85  # Confidence threshold
 nmsThreshold = 0.4    # Non-maximum suppression threshold
@@ -53,8 +52,6 @@ class VideoProcessor(QThread):
         net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
         net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
         net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
-        windowName = f"Vehicle Detector {VERSION}"
-        cv.namedWindow(windowName, cv.WINDOW_NORMAL)
 
         cap = self.getVideoCapture(self.sourceVideoPath)
         self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
@@ -62,12 +59,11 @@ class VideoProcessor(QThread):
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
         # outputLogFile = f"{currFilename}_rendered.log"
         outputLogFile = os.path.abspath("./example.log")
-
         vid_writer = cv.VideoWriter(outputVideoFile,
-                    cv.VideoWriter_fourcc(*'MJPG'), 30,
+                    cv.VideoWriter_fourcc(*'DIVX'), cv.CAP_PROP_FPS,
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
-
+       
         try:
             if self.processCapture(cap, classes, net, vid_writer) == 0:
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
@@ -77,8 +73,6 @@ class VideoProcessor(QThread):
         finally:
             cap.release()
             cv.destroyAllWindows()
-
-        # TODO: Wideo nie zapisuje się poprawnie do pliku, byc może dlateog że jak się przerwie przetwarzanie w trakcie
 
     def loadClasses(self, path):
         if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
@@ -150,24 +144,26 @@ class VideoProcessor(QThread):
     def processCapture(self, cap, classes, net, vid_writer):
         exit_status = 1
         fps = FPS().start()
-        while cv.waitKey(1) < 0:
+        while True:
 
             grabbed, frame = cap.read()
+            self.progressBar.setValue(int(cap.get(cv.CAP_PROP_POS_FRAMES)))
 
-            frame = imutils.resize(frame, width=1080)
+
+            frame = imutils.resize(frame)
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             frame = np.dstack([frame, frame, frame])
-
+            print(grabbed)
             # Processing has beed properly ended
-            if not grabbed:
+            if int(cap.get(cv.CAP_PROP_POS_FRAMES)) == int(cap.get(cv.CAP_PROP_FRAME_COUNT)):
                 exit_status = 0
-
-            self.progressBar.setValue(int(cap.get(cv.CAP_PROP_POS_FRAMES)))
-            # print(f"Progress: {int(cap.get(cv2.CAP_PROP_POS_FRAMES))/TOTAL_FRAMES_NUM}")
-            # print(f"Frames per second: {int(cv.CAP_PROP_FPS)}")
-
-            if (cv.waitKey(20) & 0xFF == ord('q')) or not grabbed:
                 break
+
+            
+            print(f"Progress: {int(cap.get(cv.CAP_PROP_POS_FRAMES))} na {int(cap.get(cv.CAP_PROP_FRAME_COUNT))}")
+
+            #if (cv.waitKey(20) & 0xFF == ord('q')) or not grabbed:
+            #    break
 
             blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False) 
 
@@ -178,13 +174,11 @@ class VideoProcessor(QThread):
             self.postProcess(frame, classes, outs)
 
             vid_writer.write(frame.astype(np.uint8))
-
-            # cv.imshow("Frame", frame)
-            # cv.waitKey(1)
+            cv.imshow("Frame", frame)
+            cv.waitKey(1)
             fps.update()
-
+            
+        print("END")
+        print(f"Progress: {int(cap.get(cv.CAP_PROP_POS_FRAMES))} na {cv.CAP_PROP_FRAME_COUNT}")
         fps.stop()
         return exit_status
-
-# if __name__ == "__main__":
-#    renderedVideoPath, renderedLogsPath = asyncio.run(main("source/sampleVideo.avi"))

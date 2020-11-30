@@ -36,3 +36,5 @@ SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include;%PATH%
 SET PATH=C:\tools\cuda\bin;%PATH%
 ```
 8. PC restart may be necessary to apply changes.
+
+## [yolov4.weights](https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights) - Download and place in the "model" directory

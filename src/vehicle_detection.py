@@ -146,24 +146,17 @@ class VideoProcessor(QThread):
         fps = FPS().start()
         while True:
 
-            grabbed, frame = cap.read()
+            _, frame = cap.read()
             self.progressBar.setValue(int(cap.get(cv.CAP_PROP_POS_FRAMES)))
-
 
             frame = imutils.resize(frame)
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             frame = np.dstack([frame, frame, frame])
-            print(grabbed)
+           
             # Processing has beed properly ended
             if int(cap.get(cv.CAP_PROP_POS_FRAMES)) == int(cap.get(cv.CAP_PROP_FRAME_COUNT)):
                 exit_status = 0
                 break
-
-            
-            print(f"Progress: {int(cap.get(cv.CAP_PROP_POS_FRAMES))} na {int(cap.get(cv.CAP_PROP_FRAME_COUNT))}")
-
-            #if (cv.waitKey(20) & 0xFF == ord('q')) or not grabbed:
-            #    break
 
             blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False) 
 
@@ -174,11 +167,7 @@ class VideoProcessor(QThread):
             self.postProcess(frame, classes, outs)
 
             vid_writer.write(frame.astype(np.uint8))
-            cv.imshow("Frame", frame)
-            cv.waitKey(1)
             fps.update()
             
-        print("END")
-        print(f"Progress: {int(cap.get(cv.CAP_PROP_POS_FRAMES))} na {cv.CAP_PROP_FRAME_COUNT}")
         fps.stop()
         return exit_status

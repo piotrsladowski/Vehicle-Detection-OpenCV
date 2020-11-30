@@ -138,3 +138,5 @@ src/model/yolov4.weights
 # Ignore sample input Video to be analyzed
 src/source/sampleVideo.avi
 src/source/sampleVideo_rendered.avi
+src/source/sampleVideo.mp4
+src/source/sampleVideo_rendered.mp4

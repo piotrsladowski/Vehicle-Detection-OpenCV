@@ -363,7 +363,7 @@ QTabBar::tab:!selected {
 }</string>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="tabInput">
           <property name="minimumSize">
@@ -524,23 +524,59 @@ QPushButton:pressed {
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="btnProcess">
+            <widget class="QFrame" name="frame">
              <property name="minimumSize">
               <size>
                <width>0</width>
                <height>50</height>
               </size>
              </property>
-             <property name="font">
-              <font>
-               <family>Roboto</family>
-               <pointsize>14</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>70</height>
+              </size>
              </property>
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_13" stretch="0">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QPushButton" name="btnProcess">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Roboto</family>
+                  <pointsize>14</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
 	border: 2px solid rgb(52, 59, 72);
 	border-radius: 5px;	
 	background-color: rgb(52, 59, 72);
@@ -554,14 +590,17 @@ QPushButton:pressed {
 	background-color: rgb(35, 40, 49);
 	border: 2px solid rgb(43, 50, 61);
 }</string>
-             </property>
-             <property name="text">
-              <string> Process!</string>
-             </property>
-             <property name="icon">
-              <iconset resource="all_icons.qrc">
-               <normaloff>:/icons/file</normaloff>:/icons/file</iconset>
-             </property>
+                </property>
+                <property name="text">
+                 <string> Process!</string>
+                </property>
+                <property name="icon">
+                 <iconset resource="all_icons.qrc">
+                  <normaloff>:/icons/file</normaloff>:/icons/file</iconset>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -661,7 +700,7 @@ border:opx;</string>
                     <string>00:00:00</string>
                    </property>
                    <property name="alignment">
-                    <set>Qt::AlignCenter</set>
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
                   </widget>
                  </item>
@@ -742,33 +781,6 @@ QProgressBar::chunk {
              <property name="frameShadow">
               <enum>QFrame::Raised</enum>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_10">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QGraphicsView" name="videoViewPlane">
-                <property name="interactive">
-                 <bool>false</bool>
-                </property>
-                <property name="viewportUpdateMode">
-                 <enum>QGraphicsView::FullViewportUpdate</enum>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </widget>
            </item>
            <item>
@@ -885,7 +897,7 @@ QProgressBar::chunk {
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QFrame" name="frameControlBtns">
+                  <widget class="QFrame" name="frameControls">
                    <property name="styleSheet">
                     <string notr="true">margin-left: auto;
 margin-right: auto;</string>
@@ -897,11 +909,20 @@ margin-right: auto;</string>
                     <enum>QFrame::Plain</enum>
                    </property>
                    <layout class="QHBoxLayout" name="horizontalLayout_10">
+                    <property name="spacing">
+                     <number>10</number>
+                    </property>
                     <property name="leftMargin">
-                     <number>300</number>
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>10</number>
                     </property>
                     <property name="rightMargin">
-                     <number>300</number>
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
                     <item>
                      <widget class="QPushButton" name="btnPlay">
@@ -978,6 +999,33 @@ QPushButton:pressed {
                       <property name="icon">
                        <iconset resource="all_icons.qrc">
                         <normaloff>:/icons/stop</normaloff>:/icons/stop</iconset>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="videoTimeLabel">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Roboto</family>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">color: white;</string>
+                      </property>
+                      <property name="text">
+                       <string>00:00</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                       </property>
                      </widget>
                     </item>

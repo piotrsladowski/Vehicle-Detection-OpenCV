@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_main.ui'
+## Form generated from reading UI file 'ui_maindhgBsN.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.15.1
 ##
@@ -277,7 +277,17 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_2.addWidget(self.frameChooseFile)
 
-        self.btnProcess = QPushButton(self.tabInput)
+        self.frame = QFrame(self.tabInput)
+        self.frame.setObjectName(u"frame")
+        self.frame.setMinimumSize(QSize(0, 50))
+        self.frame.setMaximumSize(QSize(16777215, 70))
+        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Raised)
+        self.horizontalLayout_13 = QHBoxLayout(self.frame)
+        self.horizontalLayout_13.setSpacing(5)
+        self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
+        self.horizontalLayout_13.setContentsMargins(0, 0, 0, 0)
+        self.btnProcess = QPushButton(self.frame)
         self.btnProcess.setObjectName(u"btnProcess")
         self.btnProcess.setMinimumSize(QSize(0, 50))
         font4 = QFont()
@@ -304,7 +314,10 @@ class Ui_MainWindow(object):
         icon4.addFile(u":/icons/file", QSize(), QIcon.Normal, QIcon.Off)
         self.btnProcess.setIcon(icon4)
 
-        self.verticalLayout_2.addWidget(self.btnProcess)
+        self.horizontalLayout_13.addWidget(self.btnProcess)
+
+
+        self.verticalLayout_2.addWidget(self.frame)
 
         self.frameProgress = QFrame(self.tabInput)
         self.frameProgress.setObjectName(u"frameProgress")
@@ -345,7 +358,7 @@ class Ui_MainWindow(object):
         self.labelTimeLeft.setFont(font5)
         self.labelTimeLeft.setStyleSheet(u"color: white;\n"
 "border:opx;")
-        self.labelTimeLeft.setAlignment(Qt.AlignCenter)
+        self.labelTimeLeft.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.horizontalLayout_12.addWidget(self.labelTimeLeft)
 
@@ -394,17 +407,6 @@ class Ui_MainWindow(object):
         self.frameMediaPlayer.setStyleSheet(u"background-color: black;")
         self.frameMediaPlayer.setFrameShape(QFrame.StyledPanel)
         self.frameMediaPlayer.setFrameShadow(QFrame.Raised)
-        self.verticalLayout_10 = QVBoxLayout(self.frameMediaPlayer)
-        self.verticalLayout_10.setSpacing(0)
-        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
-        self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
-        self.videoViewPlane = QGraphicsView(self.frameMediaPlayer)
-        self.videoViewPlane.setObjectName(u"videoViewPlane")
-        self.videoViewPlane.setInteractive(False)
-        self.videoViewPlane.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-
-        self.verticalLayout_10.addWidget(self.videoViewPlane)
-
 
         self.verticalLayout_7.addWidget(self.frameMediaPlayer)
 
@@ -450,16 +452,17 @@ class Ui_MainWindow(object):
         self.verticalLayout_9.setSpacing(0)
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
         self.verticalLayout_9.setContentsMargins(5, 0, 5, 0)
-        self.frameControlBtns = QFrame(self.frameMediaControls)
-        self.frameControlBtns.setObjectName(u"frameControlBtns")
-        self.frameControlBtns.setStyleSheet(u"margin-left: auto;\n"
+        self.frameControls = QFrame(self.frameMediaControls)
+        self.frameControls.setObjectName(u"frameControls")
+        self.frameControls.setStyleSheet(u"margin-left: auto;\n"
 "margin-right: auto;")
-        self.frameControlBtns.setFrameShape(QFrame.NoFrame)
-        self.frameControlBtns.setFrameShadow(QFrame.Plain)
-        self.horizontalLayout_10 = QHBoxLayout(self.frameControlBtns)
+        self.frameControls.setFrameShape(QFrame.NoFrame)
+        self.frameControls.setFrameShadow(QFrame.Plain)
+        self.horizontalLayout_10 = QHBoxLayout(self.frameControls)
+        self.horizontalLayout_10.setSpacing(10)
         self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
-        self.horizontalLayout_10.setContentsMargins(300, -1, 300, -1)
-        self.btnPlay = QPushButton(self.frameControlBtns)
+        self.horizontalLayout_10.setContentsMargins(0, 10, 0, 0)
+        self.btnPlay = QPushButton(self.frameControls)
         self.btnPlay.setObjectName(u"btnPlay")
         self.btnPlay.setMinimumSize(QSize(30, 30))
         self.btnPlay.setMaximumSize(QSize(30, 30))
@@ -483,7 +486,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_10.addWidget(self.btnPlay)
 
-        self.btnStop = QPushButton(self.frameControlBtns)
+        self.btnStop = QPushButton(self.frameControls)
         self.btnStop.setObjectName(u"btnStop")
         self.btnStop.setMinimumSize(QSize(30, 30))
         self.btnStop.setMaximumSize(QSize(30, 30))
@@ -507,8 +510,17 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_10.addWidget(self.btnStop)
 
+        self.videoTimeLabel = QLabel(self.frameControls)
+        self.videoTimeLabel.setObjectName(u"videoTimeLabel")
+        self.videoTimeLabel.setMinimumSize(QSize(200, 0))
+        self.videoTimeLabel.setFont(font5)
+        self.videoTimeLabel.setStyleSheet(u"color: white;")
+        self.videoTimeLabel.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.verticalLayout_9.addWidget(self.frameControlBtns)
+        self.horizontalLayout_10.addWidget(self.videoTimeLabel)
+
+
+        self.verticalLayout_9.addWidget(self.frameControls)
 
         self.hSliderVideo = QSlider(self.frameMediaControls)
         self.hSliderVideo.setObjectName(u"hSliderVideo")
@@ -728,7 +740,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -753,6 +765,7 @@ class Ui_MainWindow(object):
         self.labelVideoName.setText(QCoreApplication.translate("MainWindow", u"Video_name_rendered.mp4", None))
         self.btnPlay.setText("")
         self.btnStop.setText("")
+        self.videoTimeLabel.setText(QCoreApplication.translate("MainWindow", u"00:00", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVideo), QCoreApplication.translate("MainWindow", u"Video", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabLogs), QCoreApplication.translate("MainWindow", u"Logs", None))
         self.statLabel.setText(QCoreApplication.translate("MainWindow", u"Statistics of detected vehicles", None))

@@ -5,7 +5,6 @@ import numpy as np
 import os.path
 from imutils.video import FPS
 import imutils
-import asyncio
 from PySide2 import QtCore
 from PySide2.QtCore import QThread, Signal
 
@@ -60,7 +59,7 @@ class VideoProcessor(QThread):
         # outputLogFile = f"{currFilename}_rendered.log"
         outputLogFile = os.path.abspath("./example.log")
         vid_writer = cv.VideoWriter(outputVideoFile,
-                    cv.VideoWriter_fourcc(*'DIVX'), int(cap.get(cv.CAP_PROP_FPS)),
+                    cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS)),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        

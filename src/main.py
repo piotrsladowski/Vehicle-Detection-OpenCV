@@ -175,7 +175,10 @@ class MainWindow(QMainWindow):
         global PROCESS_TIME
         PROCESS_TIME += 1
         percent = self.ui.progressBar.value()/self.ui.progressBar.maximum() * 100
-        time_left = int(PROCESS_TIME * (100 - percent) / percent)
+        if percent != 0:
+            time_left = int(PROCESS_TIME * (100 - percent) / percent)
+        else:
+            time_left = 0
         self.print_time_lTL(time_left)
 
     def print_time_lTL(self, given_time):

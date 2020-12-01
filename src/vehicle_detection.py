@@ -7,6 +7,9 @@ from imutils.video import FPS
 import imutils
 from PySide2 import QtCore
 from PySide2.QtCore import QThread, Signal
+import logging
+import queue
+from datetime import datetime as dt
 
 
 ALLOWED_PATHS = {
@@ -15,6 +18,13 @@ ALLOWED_PATHS = {
     "modelWeightsPath": "src/model/yolov4.weights",
 }
 
+class QueuingHandler(logging.Handler):
+    def __init__(self, *args, message_queue, **kwargs):
+        logging.Handler.__init__(self, *args, **kwargs)
+        self.message_queue = message_queue
+
+    def emit(self, record):
+        self.message_queue.put(self.format(record).rstrip('\n'))
 
 class VideoProcessor(QThread):
 
@@ -37,6 +47,7 @@ class VideoProcessor(QThread):
         }
         self.logList = ["test", "okej"]
         self.classesInterested = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
+        self.logger = logging.getLogger(name='Processor')
         
 
     def run(self):
@@ -52,22 +63,39 @@ class VideoProcessor(QThread):
 
         cap = self.get_video_capture(self.sourceVideoPath)
         self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
-        currFilename, currExtenstion = self.sourceVideoPath.split('.')     
+        currFilename, currExtenstion = self.sourceVideoPath.split('.')
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
+
+        logFormat = '%(asctime)s: %(name)8s: %(levelname)8s: %(message)s'
         outputLogFile = f"{currFilename}_rendered.log"
+        logging.basicConfig(filename=outputLogFile, filemode='w',
+                            format=logFormat, level=logging.DEBUG)
+    
+
+        message_queue = queue.Queue()
+        handler = QueuingHandler(message_queue=message_queue, level=logging.DEBUG)
+
+        formatter = logging.Formatter(logFormat)
+        formatter.default_time_format = f"{dt.hour}:{dt.minute}:{dt.second}"
+        handler.setFormatter(formatter)                       
+        
+        self.logger.addHandler(handler)
+
         vid_writer = cv.VideoWriter(outputVideoFile,
                     cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS)),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        
+        # USAGE EXAMPLE
+        self.logger.debug("VEHICLE DETECTED".format())
 
         try:
             if self.process_capture(cap, classes, net, vid_writer) == 0:
-                with open(outputLogFile, 'w') as f:
-                    f.write("\n".join(str(entry) for entry in self.logList))
+                self.logger.handlers.clear()
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
-        except Exception:
-            # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
+        except Exception as e:
+            self.logger.error(str(e))
+            self.logger.handlers.clear()
             self.on_data_finish.emit({"done": False, "outVideo": None, "outLog": None, "stats": None})
 
     def load_classes(self, path):

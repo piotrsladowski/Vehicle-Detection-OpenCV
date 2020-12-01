@@ -4,15 +4,15 @@
 # Copyright (C) Mateusz Smendowski, Piotr Sladowski, Adam Twardosz 2020
 #######################################
 
-import sys, os, platform, time
+import sys
+import os 
+import platform
+import time
 from PySide2 import QtCore, QtGui
-from PySide2.QtCore import QSize, Qt, QCoreApplication, QUrl, Slot
+from PySide2.QtCore import QSize, Qt, QCoreApplication, QUrl
 from PySide2.QtGui import QColor
-from PySide2.QtMultimedia import QMediaContent, QMediaPlayer
-from PySide2.QtMultimediaWidgets import QGraphicsVideoItem, QVideoWidget
 from PySide2.QtWidgets import *
 
-# ctypes.cdll.LoadLibrary("T:/!_Coding_exchg/A_Projects/IO_VehicleDetection/libvlc.dll")
 os.add_dll_directory(os.path.abspath("./dlls"))
 import vlc
 
@@ -66,17 +66,6 @@ class MainWindow(QMainWindow):
         # PROCESS VIDEO FILE
         self.ui.btnProcess.clicked.connect(self.process_video)
 
-        # MEDIA PLAYER
-        self.instance = vlc.Instance()
-        self.mediaPlayer = self.instance.media_player_new()
-
-        # MEDIA PLAYER HANDLING
-        self.ui.btnPlay.clicked.connect(self.play_video)
-        self.ui.btnStop.clicked.connect(self.stop_video)
-        self.ui.hSliderVideo.setMaximum(1000)
-        self.ui.hSliderVideo.setValue(0)
-        self.ui.hSliderVideo.sliderMoved.connect(self.set_position)
-
         # UPDATING VIDEO SLIDER EVERY 200 ms
         self.videoTimer = QtCore.QTimer(self)
         self.videoTimer.setInterval(100)
@@ -128,6 +117,7 @@ class MainWindow(QMainWindow):
         RESULTS = output
 
         self.processTimer.stop()
+        self.setup_media_player()
 
         if RESULTS["done"]:
             print("Done processing, enabling postprocessing info!")
@@ -188,7 +178,24 @@ class MainWindow(QMainWindow):
         time_left = int(PROCESS_TIME * (100 - percent) / percent)
         self.print_time_lTL(time_left)
 
+    def print_time_lTL(self, given_time):
+        time_print = time.strftime('%H:%M:%S', time.gmtime(given_time))
+        self.ui.labelTimeLeft.setText(time_print)
+
     # MEDIA CONTROL METHODS
+    def setup_media_player(self):
+        # MEDIA PLAYER
+        self.instance = vlc.Instance()
+        self.mediaPlayer = self.instance.media_player_new()
+        self.mediaPlayer.audio_set_mute(True)
+
+        # MEDIA PLAYER HANDLING
+        self.ui.btnPlay.clicked.connect(self.play_video)
+        self.ui.btnStop.clicked.connect(self.stop_video)
+        self.ui.hSliderVideo.setMaximum(1000)
+        self.ui.hSliderVideo.setValue(0)
+        self.ui.hSliderVideo.sliderMoved.connect(self.set_position)
+
     def play_video(self):
         global VIDEO_PATH
         if self.mediaPlayer.is_playing():
@@ -224,10 +231,6 @@ class MainWindow(QMainWindow):
     def print_time_vTL(self, given_time):
         time_print = time.strftime('%M:%S', time.gmtime(int(round(given_time / 1000))))
         self.ui.videoTimeLabel.setText(time_print)
-
-    def print_time_lTL(self, given_time):
-        time_print = time.strftime('%H:%M:%S', time.gmtime(given_time))
-        self.ui.labelTimeLeft.setText(time_print)
 
     # ALLOW WINDOW TO MOVE ON THE SCREEN
     def moveWindow(self, event):

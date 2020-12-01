@@ -26,7 +26,6 @@ VERSION = 'v1.1'
 
 class VideoProcessor(QThread):
 
-    # frame_progress = Signal()
     on_data_finish = Signal(dict)
 
     def __init__(self, progressBar, sourceVideoPath):
@@ -40,6 +39,7 @@ class VideoProcessor(QThread):
             "two_wheel_vehicles": 0,
             "unknown_vehicles": 0
         }
+        self.logList = ["test"]
 
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
@@ -56,13 +56,15 @@ class VideoProcessor(QThread):
         self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
         currFilename, currExtenstion = self.sourceVideoPath.split('.')     
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
-        # outputLogFile = f"{currFilename}_rendered.log"
-        outputLogFile = os.path.abspath("./example.log")
+        outputLogFile = f"{currFilename}_rendered.log"
+        #outputLogFile = os.path.abspath("./example.log")
         vid_writer = cv.VideoWriter(outputVideoFile,
                     cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS)),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        
+        outputLogFile = self.writeLogList(self.logList, outputLogFile)
+
         try:
             if self.processCapture(cap, classes, net, vid_writer) == 0:
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
@@ -75,6 +77,15 @@ class VideoProcessor(QThread):
             with open(path, 'rt') as f:
                 return f.read().rstrip('\n').split('\n')
         return None
+
+    def writeLogList(self, logList, logFile):
+        if not os.path.isfile(logFile):
+            return None
+        else:
+            print(logFile)
+            with open(logFile, 'w') as f:
+                f.write("\n".join(str(entry) for entry in logList))
+        return logFile
 
     def getOutputsNames(self, network):
         layersNames = network.getLayerNames()

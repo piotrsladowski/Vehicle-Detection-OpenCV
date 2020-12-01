@@ -8,20 +8,12 @@ import imutils
 from PySide2 import QtCore
 from PySide2.QtCore import QThread, Signal
 
-# INITAL PARAMETERS
-confThreshold = 0.85  # Confidence threshold
-nmsThreshold = 0.4    # Non-maximum suppression threshold
-inpWidth = 320        # Width of network's input image
-inpHeight = 320       # Height of network's input image
 
 ALLOWED_PATHS = {
     "classesPath": "src/model/classes.names",
     "modelConfigurationPath": "src/model/yolov4.cfg",
     "modelWeightsPath": "src/model/yolov4.weights",
 }
-
-CLASSES_INTERESTED = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
-VERSION = 'v1.1'
 
 
 class VideoProcessor(QThread):
@@ -30,6 +22,10 @@ class VideoProcessor(QThread):
 
     def __init__(self, progressBar, sourceVideoPath):
         super().__init__()
+        self.confThreshold = 0.85  
+        self.nmsThreshold = 0.4    
+        self.inpWidth = 320        
+        self.inpHeight = 320       
         self.progressBar = progressBar
         self.sourceVideoPath = sourceVideoPath
         self.statistics = {
@@ -39,60 +35,53 @@ class VideoProcessor(QThread):
             "two_wheel_vehicles": 0,
             "unknown_vehicles": 0
         }
-        self.logList = ["test"]
+        self.logList = ["test", "okej"]
+        self.classesInterested = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
+        
 
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
             return None
 
         classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
-        classes = self.loadClasses(classesName)
+        classes = self.load_classes(classesName)
 
         net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
         net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
         net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
 
-        cap = self.getVideoCapture(self.sourceVideoPath)
+        cap = self.get_video_capture(self.sourceVideoPath)
         self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
         currFilename, currExtenstion = self.sourceVideoPath.split('.')     
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
         outputLogFile = f"{currFilename}_rendered.log"
-        #outputLogFile = os.path.abspath("./example.log")
         vid_writer = cv.VideoWriter(outputVideoFile,
                     cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS)),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        
-        outputLogFile = self.writeLogList(self.logList, outputLogFile)
 
         try:
-            if self.processCapture(cap, classes, net, vid_writer) == 0:
+            if self.process_capture(cap, classes, net, vid_writer) == 0:
+                with open(outputLogFile, 'w') as f:
+                    f.write("\n".join(str(entry) for entry in self.logList))
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
         except Exception:
             # TODO: Zalogować jeśli poleciał jakikolwiek wyjątek
             self.on_data_finish.emit({"done": False, "outVideo": None, "outLog": None, "stats": None})
 
-    def loadClasses(self, path):
+    def load_classes(self, path):
         if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
             with open(path, 'rt') as f:
                 return f.read().rstrip('\n').split('\n')
         return None
 
-    def writeLogList(self, logList, logFile):
-        if not os.path.isfile(logFile):
-            return None
-        else:
-            print(logFile)
-            with open(logFile, 'w') as f:
-                f.write("\n".join(str(entry) for entry in logList))
-        return logFile
-
-    def getOutputsNames(self, network):
+    def get_outputs_names(self, network):
         layersNames = network.getLayerNames()
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
 
-    def drawPred(self, frame, classes, classId, conf, left, top, right, bottom):
-        if classes[classId] not in CLASSES_INTERESTED:
+    def draw_pred(self, frame, classes, classId, conf, left, top, right, bottom):
+        if classes[classId] not in self.classesInterested:
             return None
 
         cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
@@ -101,14 +90,14 @@ class VideoProcessor(QThread):
 
         if classes:
             # print(f"classID: {classId}") -> Statystyki
-            label = '%s:%s' % (classes[classId], label) if classes[classId] in CLASSES_INTERESTED else None
+            label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         top = max(top, labelSize[1])
         cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine), (255, 255, 255), cv.FILLED)
         cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,0), 1)
 
-    def postProcess(self, frame, classes, outs):
+    def post_process(self, frame, classes, outs):
         frameHeight = frame.shape[0]
         frameWidth = frame.shape[1]
 
@@ -121,7 +110,7 @@ class VideoProcessor(QThread):
                 scores = detection[5:]
                 classId = np.argmax(scores)
                 confidence = scores[classId]
-                if confidence > confThreshold:
+                if confidence > self.confThreshold:
                     center_x = int(detection[0] * frameWidth)
                     center_y = int(detection[1] * frameHeight)
                     width = int(detection[2] * frameWidth)
@@ -132,7 +121,7 @@ class VideoProcessor(QThread):
                     confidences.append(float(confidence))
                     boxes.append([left, top, width, height])
 
-        indices = cv.dnn.NMSBoxes(boxes, confidences, confThreshold, nmsThreshold)
+        indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
             box = boxes[i]
@@ -140,15 +129,15 @@ class VideoProcessor(QThread):
             top = box[1]
             width = box[2]
             height = box[3]
-            self.drawPred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
+            self.draw_pred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
 
-    def getVideoCapture(self, path):
+    def get_video_capture(self, path):
         if not os.path.isfile(path):
             sys.exit(1)
         else:
             return cv.VideoCapture(path)
 
-    def processCapture(self, cap, classes, net, vid_writer):
+    def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
         fps = FPS().start()
         while True:
@@ -165,13 +154,13 @@ class VideoProcessor(QThread):
                 exit_status = 0
                 break
 
-            blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False) 
+            blob = cv.dnn.blobFromImage(frame, 1/255, (self.inpWidth, self.inpHeight), [0,0,0], 1, crop=False) 
 
             net.setInput(blob)
 
-            outs = net.forward(self.getOutputsNames(net))
+            outs = net.forward(self.get_outputs_names(net))
 
-            self.postProcess(frame, classes, outs)
+            self.post_process(frame, classes, outs)
 
             vid_writer.write(frame.astype(np.uint8))
             fps.update()

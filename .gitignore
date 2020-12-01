@@ -141,5 +141,8 @@ src/source/sampleVideo_rendered.avi
 src/source/sampleVideo.mp4
 src/source/sampleVideo_rendered.mp4
 
+# Ignore log file
+src/source/sampleVideo_rendered.log
+
 # Ignore libvlc.dll
 dlls/libvlc.dll

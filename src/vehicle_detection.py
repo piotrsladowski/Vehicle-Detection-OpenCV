@@ -28,14 +28,14 @@ class QueuingHandler(logging.Handler):
 class VideoProcessor(QThread):
 
     on_data_finish = Signal(dict)
+    on_progress = Signal(float)
 
-    def __init__(self, progressBar, sourceVideoPath):
+    def __init__(self, sourceVideoPath):
         super().__init__()
         self.confThreshold = 0.85  
         self.nmsThreshold = 0.4    
         self.inpWidth = 320        
-        self.inpHeight = 320       
-        self.progressBar = progressBar
+        self.inpHeight = 320
         self.sourceVideoPath = sourceVideoPath
         self.statistics = {
             "total_vehicles": 0,
@@ -64,7 +64,7 @@ class VideoProcessor(QThread):
         cap = self.get_video_capture(self.sourceVideoPath)
         self.fps = int(cap.get(cv.CAP_PROP_FPS))
         self.current_frame = 0
-        self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
+        self.maximum = cap.get(cv.CAP_PROP_FRAME_COUNT)
         currFilename, currExtenstion = self.sourceVideoPath.split('.')
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
 
@@ -91,6 +91,7 @@ class VideoProcessor(QThread):
         try:
             if self.process_capture(cap, classes, net, vid_writer) == 0:
                 self.logger.handlers.clear()
+                self.on_progress.emit(self.current_frame / self.maximum)
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
         except Exception as e:
             self.logger.error(str(e))
@@ -180,7 +181,8 @@ class VideoProcessor(QThread):
 
             _, frame = cap.read()
             
-            self.current_frame = int(cap.get(cv.CAP_PROP_POS_FRAMES))
+            self.current_frame = cap.get(cv.CAP_PROP_POS_FRAMES)
+            self.on_progress.emit(self.current_frame / self.maximum)
 
             frame = imutils.resize(frame)
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -200,8 +202,6 @@ class VideoProcessor(QThread):
             self.post_process(frame, classes, outs)
 
             vid_writer.write(frame.astype(np.uint8))
-
-            self.progressBar.setValue(self.current_frame)
             
         cap.release()
         cv.destroyAllWindows()

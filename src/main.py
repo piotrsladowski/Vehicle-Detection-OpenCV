@@ -29,7 +29,7 @@ TITLE = "Vehicle Detector"
 VIDEO_PATH = ''
 RESULTS = {}
 PROCESS_TIME = 0
-
+PROGRESS = 0.0
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -66,6 +66,10 @@ class MainWindow(QMainWindow):
         # PROCESS VIDEO FILE
         self.ui.btnProcess.clicked.connect(self.process_video)
 
+        # PROGRESS BAR SETTINGS
+        self.ui.progressBar.setRange(0, 1000)
+        self.ui.progressBar.setValue(0)
+
         # UPDATING VIDEO SLIDER EVERY 200 ms
         self.videoTimer = QtCore.QTimer(self)
         self.videoTimer.setInterval(100)
@@ -75,6 +79,10 @@ class MainWindow(QMainWindow):
         self.processTimer = QtCore.QTimer(self)
         self.processTimer.setInterval(950)
         self.processTimer.timeout.connect(self.update_progress_time)
+
+        self.progressTimer = QtCore.QTimer(self)
+        self.progressTimer.setInterval(200)
+        self.progressTimer.timeout.connect(self.update_progress_bar)
 
         # LOG BROWSER
         self.ui.textBrowser.setReadOnly(True)
@@ -97,17 +105,20 @@ class MainWindow(QMainWindow):
         self.ui.lineEdit.setText(fname[0])
 
     def process_video(self):
-        global VIDEO_PATH
+        global VIDEO_PATH, PROGRESS
+        PROGRESS = 0.0
         if self.ui.lineEdit.text() != '':
             self.ui.btnProcess.setEnabled(False)
 
             print("Processing video " + self.ui.lineEdit.text())
             VIDEO_PATH = self.ui.lineEdit.text()
 
-            self.processor = VideoProcessor(self.ui.progressBar, VIDEO_PATH)
+            self.processor = VideoProcessor(VIDEO_PATH)
             self.processor.on_data_finish.connect(self.on_processor_finish)
+            self.processor.on_progress.connect(self.on_progress_func)
             self.processor.start()
             self.processTimer.start()
+            self.progressTimer.start()
         else:
             print("No video selected")
 
@@ -116,6 +127,7 @@ class MainWindow(QMainWindow):
         global RESULTS
         RESULTS = output
 
+        self.progressTimer.stop()
         self.processTimer.stop()
         self.setup_media_player()
 
@@ -146,6 +158,10 @@ class MainWindow(QMainWindow):
 
             self.toggle_tabs()
             self.ui.tabWidget.setCurrentIndex(1)
+
+    def on_progress_func(self, prog):
+        global PROGRESS
+        PROGRESS = prog
 
     # PRINT STATISTICS TO STATS_TAB
     def print_statistics(self, stats):
@@ -180,6 +196,9 @@ class MainWindow(QMainWindow):
         else:
             time_left = 0
         self.print_time_lTL(time_left)
+
+    def update_progress_bar(self):
+        self.ui.progressBar.setValue(PROGRESS * 1000)
 
     def print_time_lTL(self, given_time):
         time_print = time.strftime('%H:%M:%S', time.gmtime(given_time))

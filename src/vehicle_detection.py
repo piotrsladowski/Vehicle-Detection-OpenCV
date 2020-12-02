@@ -3,7 +3,6 @@ import argparse
 import sys
 import numpy as np
 import os.path
-from imutils.video import FPS
 import imutils
 from PySide2 import QtCore
 from PySide2.QtCore import QThread, Signal
@@ -45,14 +44,15 @@ class VideoProcessor(QThread):
             "two_wheel_vehicles": 0,
             "unknown_vehicles": 0
         }
-        self.logList = ["test", "okej"]
         self.classesInterested = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
-        self.logger = logging.getLogger(name='Processor')
+        self.logger = logging.getLogger(name='Vehicle Detector')
         
 
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
             return None
+
+        
 
         classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
         classes = self.load_classes(classesName)
@@ -62,6 +62,8 @@ class VideoProcessor(QThread):
         net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
 
         cap = self.get_video_capture(self.sourceVideoPath)
+        self.fps = int(cap.get(cv.CAP_PROP_FPS))
+        self.current_frame = 0
         self.progressBar.setMaximum(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
         currFilename, currExtenstion = self.sourceVideoPath.split('.')
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
@@ -86,9 +88,6 @@ class VideoProcessor(QThread):
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        
-        # USAGE EXAMPLE
-        self.logger.debug("VEHICLE DETECTED".format())
-
         try:
             if self.process_capture(cap, classes, net, vid_writer) == 0:
                 self.logger.handlers.clear()
@@ -117,8 +116,18 @@ class VideoProcessor(QThread):
         label = '%.2f' % conf
 
         if classes:
-            # print(f"classID: {classId}") -> Statystyki
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
+        
+        if classes[classId] == "car":
+            self.statistics["light_vehicles"] += 1
+        elif classes[classId] == "bus" or classes[classId] == "truck":
+            self.statistics["heavy_vehicles"] += 1
+        elif classes[classId] == "bicycle" or classes[classId] == "motorbike":
+            self.statistics["two_wheel_vehicles"] += 1
+        else:
+            self.statistics["unknown_vehicles"] += 1
+        self.statistics["total_vehicles"] += 1
+        self.logger.info(f"New class: {classes[classId]} detected in {self.current_frame/self.fps} second with conf: {label.split(':')[1]}")
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         top = max(top, labelSize[1])
@@ -167,11 +176,11 @@ class VideoProcessor(QThread):
 
     def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
-        fps = FPS().start()
         while True:
 
             _, frame = cap.read()
-            self.progressBar.setValue(int(cap.get(cv.CAP_PROP_POS_FRAMES)))
+            
+            self.current_frame = int(cap.get(cv.CAP_PROP_POS_FRAMES))
 
             frame = imutils.resize(frame)
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -191,9 +200,9 @@ class VideoProcessor(QThread):
             self.post_process(frame, classes, outs)
 
             vid_writer.write(frame.astype(np.uint8))
-            fps.update()
+
+            self.progressBar.setValue(self.current_frame)
             
-        fps.stop()
         cap.release()
         cv.destroyAllWindows()
         return exit_status

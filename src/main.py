@@ -151,9 +151,9 @@ class MainWindow(QMainWindow):
     def print_statistics(self, stats):
         self.ui.labelTotalCountVar.setText(str(stats["total_vehicles"]))
         self.ui.labelNoPassVar.setText(str(stats["light_vehicles"]))
-        self.ui.labelNoCgoVar.setText(str(stats["light_vehicles"]))
-        self.ui.labelNoMotorVar.setText(str(stats["light_vehicles"]))
-        self.ui.labelNoUnkVar.setText(str(stats["light_vehicles"]))
+        self.ui.labelNoCgoVar.setText(str(stats["heavy_vehicles"]))
+        self.ui.labelNoMotorVar.setText(str(stats["two_wheel_vehicles"]))
+        self.ui.labelNoUnkVar.setText(str(stats["unknown_vehicles"]))
 
     # TABS TOGGLING
     def toggle_tabs(self):

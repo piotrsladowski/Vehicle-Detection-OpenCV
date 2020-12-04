@@ -32,8 +32,10 @@ class VideoProcessor(QThread):
 
     def __init__(self, sourceVideoPath):
         super().__init__()
-        self.confThreshold = 0.85  
-        self.nmsThreshold = 0.4    
+        self.confThreshold = 0.85   # Only objects with greater confidence will be detecting
+        self.nmsThreshold = 0.4
+        # Windows size in YOLO. Available options are: 320, 416, 608.
+        # Remeber to update width and height fields in yolov4.cfg    
         self.inpWidth = 320        
         self.inpHeight = 320
         self.sourceVideoPath = sourceVideoPath
@@ -99,6 +101,7 @@ class VideoProcessor(QThread):
             self.on_data_finish.emit({"done": False, "outVideo": None, "outLog": None, "stats": None})
 
     def load_classes(self, path):
+        # Load from coco.names classes specified in __init__
         if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
             with open(path, 'rt') as f:
                 return f.read().rstrip('\n').split('\n')
@@ -108,17 +111,19 @@ class VideoProcessor(QThread):
         layersNames = network.getLayerNames()
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
 
-    def draw_pred(self, frame, classes, classId, conf, left, top, right, bottom):
+    def draw_pred(self, frame, classes, classId, conf, leftBtmX, leftBtmY, rightTopX, rightTopY):
         if classes[classId] not in self.classesInterested:
             return None
 
-        cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
+        # Draw a rectangle with lightblue line borders of thickness of 3 px
+        cv.rectangle(frame, (leftBtmX, leftBtmY), (rightTopX, rightTopY), (255, 178, 50), 3)
 
         label = '%.2f' % conf
 
         if classes:
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
         
+        # Update number of detected vehicles
         if classes[classId] == "car":
             self.statistics["light_vehicles"] += 1
         elif classes[classId] == "bus" or classes[classId] == "truck":
@@ -131,9 +136,11 @@ class VideoProcessor(QThread):
         self.logger.info(f"New class: {classes[classId]} detected in {self.current_frame/self.fps} second with conf: {label.split(':')[1]}")
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        top = max(top, labelSize[1])
-        cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine), (255, 255, 255), cv.FILLED)
-        cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,0), 1)
+        leftBtmY = max(leftBtmY, labelSize[1])
+        # Draw a white label background
+        cv.rectangle(frame, (leftBtmX, leftBtmY - round(1.5*labelSize[1])), (leftBtmX + round(1.5*labelSize[0]), leftBtmY + baseLine), (255, 255, 255), cv.FILLED)
+        # Draw a black text label of a detected vehicle
+        cv.putText(frame, label, (leftBtmX, leftBtmY), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,0), 1)
 
     def post_process(self, frame, classes, outs):
         frameHeight = frame.shape[0]
@@ -143,31 +150,38 @@ class VideoProcessor(QThread):
         confidences = []
         boxes = []
 
+        # Parse coordinates of detected objects to rectangles indices.
         for out in outs:
             for detection in out:
                 scores = detection[5:]
                 classId = np.argmax(scores)
                 confidence = scores[classId]
                 if confidence > self.confThreshold:
+                    # OpenCV returns relative indices of detected objects
+                    # e.g if your frame is 1920px wide and center of the object is on 768px
+                    # then OpenCV will return 0.4.
+                    # Because every rectangle can be defined by two points on the surface
+                    # we will obtain left bottom and width and height of a rectangle.
                     center_x = int(detection[0] * frameWidth)
                     center_y = int(detection[1] * frameHeight)
                     width = int(detection[2] * frameWidth)
                     height = int(detection[3] * frameHeight)
-                    left = int(center_x - width / 2)
-                    top = int(center_y - height / 2)
+                    leftBtmX = int(center_x - width / 2)
+                    leftBtmY = int(center_y - height / 2)
                     classIds.append(classId)
                     confidences.append(float(confidence))
-                    boxes.append([left, top, width, height])
+                    boxes.append([leftBtmX, leftBtmY, width, height])
 
         indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
             box = boxes[i]
-            left = box[0]
-            top = box[1]
+            leftBtmX = box[0]
+            leftBtmY = box[1]
             width = box[2]
             height = box[3]
-            self.draw_pred(frame, classes, classIds[i], confidences[i], left, top, left + width, top + height)
+            # Draw rectangles on the frame
+            self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
 
     def get_video_capture(self, path):
         if not os.path.isfile(path):
@@ -185,6 +199,8 @@ class VideoProcessor(QThread):
             self.on_progress.emit(self.current_frame / self.maximum)
 
             frame = imutils.resize(frame)
+            # Process frames in a grayscale. 
+            # Comment next 2 lines if you want to have a RGB colors
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             frame = np.dstack([frame, frame, frame])
            
@@ -202,7 +218,8 @@ class VideoProcessor(QThread):
             self.post_process(frame, classes, outs)
 
             vid_writer.write(frame.astype(np.uint8))
-            
+
+        # Close input video file    
         cap.release()
         cv.destroyAllWindows()
         return exit_status

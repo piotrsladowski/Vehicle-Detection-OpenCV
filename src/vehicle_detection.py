@@ -36,9 +36,14 @@ class VideoProcessor(QThread):
         self.nmsThreshold = 0.4
         # Windows size in YOLO. Available options are: 320, 416, 608.
         # Remeber to update width and height fields in yolov4.cfg    
-        self.inpWidth = 320        
-        self.inpHeight = 320
+        self.inpWidth = 608        
+        self.inpHeight = 608
         self.sourceVideoPath = sourceVideoPath
+        # How many frames will be skipped. 
+        # E.g if value 3 is selected then only 1 frame per 3 frames will be analyzed.
+        # 1 is a default value, no frames will be skipped.
+        self.frameSkipperCount = 1
+        self.detectionsCache = []
         self.statistics = {
             "total_vehicles": 0,
             "light_vehicles": 0,
@@ -52,9 +57,8 @@ class VideoProcessor(QThread):
 
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
+            print("Input file not found")
             return None
-
-        
 
         classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
         classes = self.load_classes(classesName)
@@ -105,24 +109,54 @@ class VideoProcessor(QThread):
         if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
             with open(path, 'rt') as f:
                 return f.read().rstrip('\n').split('\n')
+        print("No classes loaded")
         return None
 
     def get_outputs_names(self, network):
         layersNames = network.getLayerNames()
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
+    
+    def compare_pred(self, tempDetections):
+        ## 1 CASE
+        # [[leftBtmX, leftBtmY, width, height], X, Y] 
+
+        ## CASE
+        # [[leftBtmX, leftBtmY, width, height], [X, Y]]
+        # [[leftBtmX, leftBtmY, width, height], [X, Y]]
+        if len(self.detectionsCache) == 0:
+            return [row[0] for row in tempDetections]
+        sanitizedDetections = []
+        # Compare all points in peer-to-peer scenario
+        X1, X2, Y1, Y2 = 0,0,0,0
+        teoplitz = []
+        for pred in tempDetections:
+            if(len(pred) == 4):
+                teoplitz = pred
+            if(len(pred) == 3):
+                teoplitz = pred[0]
+                X1 = pred[1]
+                Y1 = pred[2]
+            for cachePred in self.detectionsCache:
+                if(len(cachePred) == 4):
+                    continue
+                if(len(cachePred) == 3):
+                    X2 = cachePred[1]
+                    Y2 = cachePred[2]
+                # Compare distance by simple Pitagoras
+                if abs(((X1**2 + Y1**2)**0.5) - ((X2**2 + Y2**2)**0.5)) < 0.6:
+                    sanitizedDetections.append(teoplitz)
+        return sanitizedDetections
 
     def draw_pred(self, frame, classes, classId, conf, leftBtmX, leftBtmY, rightTopX, rightTopY):
-        if classes[classId] not in self.classesInterested:
-            return None
-
         # Draw a rectangle with lightblue line borders of thickness of 3 px
         cv.rectangle(frame, (leftBtmX, leftBtmY), (rightTopX, rightTopY), (255, 178, 50), 3)
 
         label = '%.2f' % conf
-
         if classes:
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
         
+        if (label == None):
+            return None
         # Update number of detected vehicles
         if classes[classId] == "car":
             self.statistics["light_vehicles"] += 1
@@ -149,6 +183,7 @@ class VideoProcessor(QThread):
         classIds = []
         confidences = []
         boxes = []
+        doubledDetections = [] # Store all 
 
         # Parse coordinates of detected objects to rectangles indices.
         for out in outs:
@@ -169,9 +204,18 @@ class VideoProcessor(QThread):
                     leftBtmX = int(center_x - width / 2)
                     leftBtmY = int(center_y - height / 2)
                     classIds.append(classId)
+                    if classes[classId] in self.classesInterested:
+                        classIds.append(classId)
+                    else:
+                        continue
                     confidences.append(float(confidence))
                     boxes.append([leftBtmX, leftBtmY, width, height])
+                    print("X: {0}".format(detection[0]))
+                    print("Y: {0}".format(detection[1]))
+                    doubledDetections.append([[leftBtmX, leftBtmY, width, height], detection[0], detection[1]])
 
+        #boxes = self.compare_pred(doubledDetections)
+        print(boxes)
         indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
@@ -182,9 +226,13 @@ class VideoProcessor(QThread):
             height = box[3]
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
+        # UNCOMMENT TO USE compare_pred:
+        #self.detectionsCache.clear()
+        #cleself.detectionsCache = doubledDetections
 
     def get_video_capture(self, path):
         if not os.path.isfile(path):
+            print("Input file not found")
             sys.exit(1)
         else:
             return cv.VideoCapture(path)
@@ -192,18 +240,20 @@ class VideoProcessor(QThread):
     def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
         while True:
-
             _, frame = cap.read()
             
             self.current_frame = cap.get(cv.CAP_PROP_POS_FRAMES)
             self.on_progress.emit(self.current_frame / self.maximum)
-
             frame = imutils.resize(frame)
             # Process frames in a grayscale. 
             # Comment next 2 lines if you want to have a RGB colors
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             frame = np.dstack([frame, frame, frame])
            
+            # Speed up algorithm by skipping frames
+            if(self.frameSkipperCount != 1 and (self.current_frame % self.frameSkipperCount == 0)):
+                vid_writer.write(frame.astype(np.uint8))
+                continue
             # Processing has beed properly ended
             if int(cap.get(cv.CAP_PROP_POS_FRAMES)) == int(cap.get(cv.CAP_PROP_FRAME_COUNT)):
                 exit_status = 0

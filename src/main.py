@@ -30,7 +30,6 @@ VIDEO_PATH = ''
 RESULTS = {}
 PROCESS_TIME = 0
 PROGRESS = 0.0
-
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -62,6 +61,14 @@ class MainWindow(QMainWindow):
 
         # CHOOSE VIDEO FILE
         self.ui.btnChooseFolder.clicked.connect(self.choose_video)
+
+        # COMBO BOX SETTINGS
+        self.speed_settings = [ "YOLOv3-tiny (-50% acc, +500% spd)",
+                                "YOLOv3-320 (-10% acc, +20% spd)",
+                                "YOLOv4 <Default>",
+                                "YOLOv3-608 (+10% acc, -20% spd)" 
+                                ]
+        self.state_combo()
 
         # PROCESS VIDEO FILE
         self.ui.btnProcess.clicked.connect(self.process_video)
@@ -98,8 +105,12 @@ class MainWindow(QMainWindow):
     def mousePressEvent(self, event):
         self.dragPos = event.globalPos()
 
+    def state_combo(self):
+        self.ui.cbSpeedAccur.addItems(self.speed_settings)
+        self.ui.cbSpeedAccur.setCurrentIndex(2)
+
     def choose_video(self):
-        fname = QFileDialog.getOpenFileName(self, 'Choose Video', os.path.join(os.path.expanduser('~'), 'Videos'), "Video Files (*.mp4 *.mkv *.avi)")
+        fname = QFileDialog.getOpenFileName(self, 'Choose Video', os.path.join(os.path.expanduser('~')), "Video Files (*.mp4 *.mkv *.avi)")
 
         # SET lineEdit TO CHOSEN PATH
         self.ui.lineEdit.setText(fname[0])
@@ -109,11 +120,14 @@ class MainWindow(QMainWindow):
         PROGRESS = 0.0
         if self.ui.lineEdit.text() != '':
             self.ui.btnProcess.setEnabled(False)
+            self.ui.cbSpeedAccur.setEnabled(False)
 
             print("Processing video " + self.ui.lineEdit.text())
             VIDEO_PATH = self.ui.lineEdit.text()
+            # setting speed and accuracy model for vehicle detection
+            model = self.ui.cbSpeedAccur.currentIndex()
 
-            self.processor = VideoProcessor(VIDEO_PATH)
+            self.processor = VideoProcessor(VIDEO_PATH)#, model)
             self.processor.on_data_finish.connect(self.on_processor_finish)
             self.processor.on_progress.connect(self.on_progress_func)
             self.processor.start()

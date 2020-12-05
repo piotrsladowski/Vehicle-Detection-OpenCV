@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="icons">
+    <file alias="arrow_dn">icons/cil-arrow-bottom.png</file>
+    <file alias="arrow_up">icons/cil-arrow-top.png</file>
     <file alias="car_logo">icons/cil-car.png</file>
     <file alias="file">icons/cil-file.png</file>
     <file alias="folder_open">icons/cil-folder-open.png</file>

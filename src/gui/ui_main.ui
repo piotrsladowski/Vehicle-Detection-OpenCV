@@ -363,7 +363,7 @@ QTabBar::tab:!selected {
 }</string>
          </property>
          <property name="currentIndex">
-          <number>2</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="tabInput">
           <property name="minimumSize">
@@ -524,7 +524,7 @@ QPushButton:pressed {
             </widget>
            </item>
            <item>
-            <widget class="QFrame" name="frame">
+            <widget class="QFrame" name="frameProcess">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -543,7 +543,7 @@ QPushButton:pressed {
              <property name="frameShadow">
               <enum>QFrame::Raised</enum>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_13" stretch="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_13" stretch="0,0">
               <property name="spacing">
                <number>5</number>
               </property>
@@ -597,6 +597,76 @@ QPushButton:pressed {
                 <property name="icon">
                  <iconset resource="all_icons.qrc">
                   <normaloff>:/icons/file</normaloff>:/icons/file</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="cbSpeedAccur">
+                <property name="minimumSize">
+                 <size>
+                  <width>98</width>
+                  <height>50</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>200</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Roboto</family>
+                  <pointsize>10</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QComboBox {
+	border: 0 px;
+	background-color: rgb(27, 29, 35);
+	
+	padding: 10px 10px 10px 10px;
+	min-width: 6em;
+	color: white;
+}
+
+QComboBox:hover {
+	background-color: rgb(35, 40, 49);
+}
+
+QComboBox::drop-down {
+	subcontrol-origin: padding;
+	subcontrol-position: top right;
+	width: 30px;
+	border: 0px;
+}
+
+QComboBox::down-arrow {
+    image: url(:/icons/arrow_dn);
+	width: 30px;
+}
+
+QComboBox::down-arrow:on {
+    image: url(:/icons/arrow_up);
+	width: 30px;
+}
+ 
+QComboBox QAbstractItemView {
+    selection-background-color: rgb(52, 59, 72);
+    background-color: rgb(27, 29, 35);
+    
+	outline: none;
+
+	border: 0px;
+	border-style: none;
+
+    padding: 5px 0px 5px 0px;
+
+	color: lightgray;
+	selection-color: white;
+}</string>
                 </property>
                </widget>
               </item>
@@ -758,6 +828,9 @@ QProgressBar::chunk {
             </widget>
            </item>
           </layout>
+          <zorder>frameProgress</zorder>
+          <zorder>frameChooseFile</zorder>
+          <zorder>frameProcess</zorder>
          </widget>
          <widget class="QWidget" name="tabVideo">
           <attribute name="title">

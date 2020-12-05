@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_maindhgBsN.ui'
+## Form generated from reading UI file 'ui_maintlamoA.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.15.1
 ##
@@ -277,17 +277,17 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_2.addWidget(self.frameChooseFile)
 
-        self.frame = QFrame(self.tabInput)
-        self.frame.setObjectName(u"frame")
-        self.frame.setMinimumSize(QSize(0, 50))
-        self.frame.setMaximumSize(QSize(16777215, 70))
-        self.frame.setFrameShape(QFrame.StyledPanel)
-        self.frame.setFrameShadow(QFrame.Raised)
-        self.horizontalLayout_13 = QHBoxLayout(self.frame)
+        self.frameProcess = QFrame(self.tabInput)
+        self.frameProcess.setObjectName(u"frameProcess")
+        self.frameProcess.setMinimumSize(QSize(0, 50))
+        self.frameProcess.setMaximumSize(QSize(16777215, 70))
+        self.frameProcess.setFrameShape(QFrame.StyledPanel)
+        self.frameProcess.setFrameShadow(QFrame.Raised)
+        self.horizontalLayout_13 = QHBoxLayout(self.frameProcess)
         self.horizontalLayout_13.setSpacing(5)
         self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
         self.horizontalLayout_13.setContentsMargins(0, 0, 0, 0)
-        self.btnProcess = QPushButton(self.frame)
+        self.btnProcess = QPushButton(self.frameProcess)
         self.btnProcess.setObjectName(u"btnProcess")
         self.btnProcess.setMinimumSize(QSize(0, 50))
         font4 = QFont()
@@ -316,8 +316,65 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_13.addWidget(self.btnProcess)
 
+        self.cbSpeedAccur = QComboBox(self.frameProcess)
+        self.cbSpeedAccur.setObjectName(u"cbSpeedAccur")
+        self.cbSpeedAccur.setMinimumSize(QSize(98, 50))
+        self.cbSpeedAccur.setMaximumSize(QSize(200, 16777215))
+        font5 = QFont()
+        font5.setFamily(u"Roboto")
+        font5.setPointSize(10)
+        font5.setBold(True)
+        font5.setWeight(75)
+        self.cbSpeedAccur.setFont(font5)
+        self.cbSpeedAccur.setStyleSheet(u"QComboBox {\n"
+"	border: 0 px;\n"
+"	background-color: rgb(27, 29, 35);\n"
+"	\n"
+"	padding: 10px 10px 10px 10px;\n"
+"	min-width: 6em;\n"
+"	color: white;\n"
+"}\n"
+"\n"
+"QComboBox:hover {\n"
+"	background-color: rgb(35, 40, 49);\n"
+"}\n"
+"\n"
+"QComboBox::drop-down {\n"
+"	subcontrol-origin: padding;\n"
+"	subcontrol-position: top right;\n"
+"	width: 30px;\n"
+"	border: 0px;\n"
+"}\n"
+"\n"
+"QComboBox::down-arrow {\n"
+"    image: url(:/icons/arrow_dn);\n"
+"	width: 30px;\n"
+"}\n"
+"\n"
+"QComboBox::down-arrow:on {\n"
+"    image: url(:/icons/arrow_up);\n"
+"	width: 30px;\n"
+"}\n"
+" \n"
+"QComboBox QAbstractItemView {\n"
+"    selection-background-color: rgb(52, 59, 72);\n"
+"    background-color: rgb(27, 29, 35);\n"
+"    \n"
+"	outline: none;\n"
+"\n"
+"	border: 0px;\n"
+"	border-style: none;\n"
+"\n"
+"    padding: 5px 0px 5px 0px;\n"
+"\n"
+"	color: lightgray;\n"
+"	selection-color: white;\n"
+"}")
 
-        self.verticalLayout_2.addWidget(self.frame)
+        self.horizontalLayout_13.addWidget(self.cbSpeedAccur)
+
+
+        self.verticalLayout_2.addWidget(self.frameProcess)
 
         self.frameProgress = QFrame(self.tabInput)
         self.frameProgress.setObjectName(u"frameProgress")
@@ -350,11 +407,6 @@ class Ui_MainWindow(object):
 
         self.labelTimeLeft = QLabel(self.frameProgressInfo)
         self.labelTimeLeft.setObjectName(u"labelTimeLeft")
-        font5 = QFont()
-        font5.setFamily(u"Roboto")
-        font5.setPointSize(10)
-        font5.setBold(True)
-        font5.setWeight(75)
         self.labelTimeLeft.setFont(font5)
         self.labelTimeLeft.setStyleSheet(u"color: white;\n"
 "border:opx;")
@@ -397,6 +449,9 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addWidget(self.frameProgress)
 
         self.tabWidget.addTab(self.tabInput, "")
+        self.frameProgress.raise_()
+        self.frameChooseFile.raise_()
+        self.frameProcess.raise_()
         self.tabVideo = QWidget()
         self.tabVideo.setObjectName(u"tabVideo")
         self.verticalLayout_7 = QVBoxLayout(self.tabVideo)
@@ -740,7 +795,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)

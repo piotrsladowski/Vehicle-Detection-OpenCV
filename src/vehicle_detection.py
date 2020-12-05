@@ -57,7 +57,6 @@ class VideoProcessor(QThread):
 
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
-            print("Input file not found")
             return None
 
         classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
@@ -117,34 +116,28 @@ class VideoProcessor(QThread):
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
     
     def compare_pred(self, tempDetections):
-        ## 1 CASE
-        # [[leftBtmX, leftBtmY, width, height], X, Y] 
-
-        ## CASE
-        # [[leftBtmX, leftBtmY, width, height], [X, Y]]
-        # [[leftBtmX, leftBtmY, width, height], [X, Y]]
         if len(self.detectionsCache) == 0:
             return [row[0] for row in tempDetections]
         sanitizedDetections = []
         # Compare all points in peer-to-peer scenario
-        X1, X2, Y1, Y2 = 0,0,0,0
-        teoplitz = []
+        tempParameters, cachedParameters = [], []
         for pred in tempDetections:
-            if(len(pred) == 4):
-                teoplitz = pred
-            if(len(pred) == 3):
-                teoplitz = pred[0]
-                X1 = pred[1]
-                Y1 = pred[2]
+            # Struktura pred w obiegu: [[705, 21, 193, 109], [0.41815326, 0.071146525]]
+            tempParameters = pred[0]
+            print(f"Pred - wartości bezwzgędne: {tempParameters}")
             for cachePred in self.detectionsCache:
-                if(len(cachePred) == 4):
-                    continue
-                if(len(cachePred) == 3):
-                    X2 = cachePred[1]
-                    Y2 = cachePred[2]
+                cachedParameters = cachePred[0]
+                print(f"Cached pred - wartości bezwzględne: {cachedParameters}")
                 # Compare distance by simple Pitagoras
-                if abs(((X1**2 + Y1**2)**0.5) - ((X2**2 + Y2**2)**0.5)) < 0.6:
-                    sanitizedDetections.append(teoplitz)
+                #print(f"X1 {X1}, Y1 {Y1}, X2 {X2}, Y2 {Y2}")
+                X1 = tempParameters[0]
+                Y1 = tempParameters[1]
+                X2 = cachedParameters[0]
+                Y2 = cachedParameters[1]
+                if ((X2-X1)**2 + (Y2-Y1)**2)**0.5 < 0.6:
+                    sanitizedDetections.append(cachedParameters)
+                else:
+                    sanitizedDetections.append(tempParameters)
         return sanitizedDetections
 
     def draw_pred(self, frame, classes, classId, conf, leftBtmX, leftBtmY, rightTopX, rightTopY):
@@ -212,10 +205,14 @@ class VideoProcessor(QThread):
                     boxes.append([leftBtmX, leftBtmY, width, height])
                     print("X: {0}".format(detection[0]))
                     print("Y: {0}".format(detection[1]))
-                    doubledDetections.append([[leftBtmX, leftBtmY, width, height], detection[0], detection[1]])
+                    doubledDetections.append([[leftBtmX, leftBtmY, width, height], [detection[0], detection[1]]])
+                    print("Bezwzględne: {0}".format([leftBtmX, leftBtmY, width, height]))
+                    # X: 0.5671080946922302
+                    # Y: 0.14301526546478271
+                    # Bezwzględne: [970, 103, 235, 101]
 
-        #boxes = self.compare_pred(doubledDetections)
-        print(boxes)
+        boxes = self.compare_pred(doubledDetections)
+        # print(boxes)
         indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
@@ -227,8 +224,8 @@ class VideoProcessor(QThread):
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
         # UNCOMMENT TO USE compare_pred:
-        #self.detectionsCache.clear()
-        #cleself.detectionsCache = doubledDetections
+        self.detectionsCache.clear()
+        self.detectionsCache = doubledDetections
 
     def get_video_capture(self, path):
         if not os.path.isfile(path):

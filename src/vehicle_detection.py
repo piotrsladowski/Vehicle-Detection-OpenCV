@@ -1,3 +1,4 @@
+import math
 import cv2 as cv
 import argparse
 import sys
@@ -11,10 +12,28 @@ import queue
 from datetime import datetime as dt
 
 
-ALLOWED_PATHS = {
+M0 = {
+    "classesPath": "src/model/classes.names",
+    "modelConfigurationPath": "src/model/yolov3-tiny.cfg",
+    "modelWeightsPath": "src/model/yolov3-tiny.weights",
+}
+
+M1 = {
+    "classesPath": "src/model/classes.names",
+    "modelConfigurationPath": "src/model/yolov3-320.cfg",
+    "modelWeightsPath": "src/model/yolov3.weights",
+}
+
+M2 = {
     "classesPath": "src/model/classes.names",
     "modelConfigurationPath": "src/model/yolov4.cfg",
     "modelWeightsPath": "src/model/yolov4.weights",
+}
+
+M4 = {
+    "classesPath": "src/model/classes.names",
+    "modelConfigurationPath": "src/model/yolov3-608.cfg",
+    "modelWeightsPath": "src/model/yolov3.weights",
 }
 
 class QueuingHandler(logging.Handler):
@@ -30,8 +49,25 @@ class VideoProcessor(QThread):
     on_data_finish = Signal(dict)
     on_progress = Signal(float)
 
-    def __init__(self, sourceVideoPath):
+    def __init__(self, sourceVideoPath, model):
         super().__init__()
+        if model == 0:
+            self.model = M0
+            print("Chosen model: {}".format("YOLOv3-tiny"))
+        elif model == 1:
+            self.model = M1
+            print("Chosen model: {}".format("YOLOv3-320"))
+        elif model == 2:
+            self.model = M2
+            print("Chosen model: {}".format("YOLOv4 <Default>"))
+        elif model == 3:
+            self.model = M4
+            print("Chosen model: {}".format("YOLOv3-608"))
+        else:
+            print("Wrong model. Can't find it!")
+
+        self.threshold = 300.0
+
         self.confThreshold = 0.85   # Only objects with greater confidence will be detecting
         self.nmsThreshold = 0.4
         # Windows size in YOLO. Available options are: 320, 416, 608.
@@ -59,7 +95,7 @@ class VideoProcessor(QThread):
         if not os.path.isfile(self.sourceVideoPath):
             return None
 
-        classesName, modelConfiguration, modelWeights, *_ = ALLOWED_PATHS.values()
+        classesName, modelConfiguration, modelWeights, *_ = self.model.values()
         classes = self.load_classes(classesName)
 
         net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
@@ -105,7 +141,7 @@ class VideoProcessor(QThread):
 
     def load_classes(self, path):
         # Load from coco.names classes specified in __init__
-        if path.lower().endswith('.names') and path in ALLOWED_PATHS.values():
+        if path.lower().endswith('.names') and path in self.model.values():
             with open(path, 'rt') as f:
                 return f.read().rstrip('\n').split('\n')
         print("No classes loaded")
@@ -115,30 +151,41 @@ class VideoProcessor(QThread):
         layersNames = network.getLayerNames()
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
     
-    def compare_pred(self, tempDetections):
+    def log_object(self, classes, class_id, confidence):
+        if classes[class_id] in self.classesInterested:
+            if classes[class_id] == "car":
+                self.statistics["light_vehicles"] += 1
+            elif classes[class_id] == "bus" or classes[class_id] == "truck":
+                self.statistics["heavy_vehicles"] += 1
+            elif classes[class_id] == "bicycle" or classes[class_id] == "motorbike":
+                self.statistics["two_wheel_vehicles"] += 1
+            else:
+                self.statistics["unknown_vehicles"] += 1
+            self.statistics["total_vehicles"] += 1
+            self.logger.info(f"New class: {classes[class_id]} detected in {self.current_frame/self.fps} second with conf: {confidence}")
+
+    def compare_pred(self, tempDetections, classes, classIds, confidences):
         if len(self.detectionsCache) == 0:
-            return [row[0] for row in tempDetections]
-        sanitizedDetections = []
+            for idx, pred in enumerate(tempDetections):
+                self.log_object(classes, classIds[idx], confidences[idx])
+            return
+
         # Compare all points in peer-to-peer scenario
         tempParameters, cachedParameters = [], []
-        for pred in tempDetections:
+        for idx, pred in enumerate(tempDetections):
             # Struktura pred w obiegu: [[705, 21, 193, 109], [0.41815326, 0.071146525]]
-            tempParameters = pred[0]
-            print(f"Pred - wartości bezwzgędne: {tempParameters}")
-            for cachePred in self.detectionsCache:
-                cachedParameters = cachePred[0]
-                print(f"Cached pred - wartości bezwzględne: {cachedParameters}")
-                # Compare distance by simple Pitagoras
-                #print(f"X1 {X1}, Y1 {Y1}, X2 {X2}, Y2 {Y2}")
+            tempParameters = pred
+            min_lens = []
+            for idxc, cachePred in enumerate(self.detectionsCache):
+                cachedParameters = cachePred
                 X1 = tempParameters[0]
                 Y1 = tempParameters[1]
                 X2 = cachedParameters[0]
                 Y2 = cachedParameters[1]
-                if ((X2-X1)**2 + (Y2-Y1)**2)**0.5 < 0.6:
-                    sanitizedDetections.append(cachedParameters)
-                else:
-                    sanitizedDetections.append(tempParameters)
-        return sanitizedDetections
+                min_lens.append(float(math.sqrt(math.pow(X2-X1, 2) + math.pow(Y2-Y1, 2))))
+
+            if min(min_lens) > self.threshold:
+                self.log_object(classes, classIds[idx], confidences[idx])
 
     def draw_pred(self, frame, classes, classId, conf, leftBtmX, leftBtmY, rightTopX, rightTopY):
         # Draw a rectangle with lightblue line borders of thickness of 3 px
@@ -150,17 +197,6 @@ class VideoProcessor(QThread):
         
         if (label == None):
             return None
-        # Update number of detected vehicles
-        if classes[classId] == "car":
-            self.statistics["light_vehicles"] += 1
-        elif classes[classId] == "bus" or classes[classId] == "truck":
-            self.statistics["heavy_vehicles"] += 1
-        elif classes[classId] == "bicycle" or classes[classId] == "motorbike":
-            self.statistics["two_wheel_vehicles"] += 1
-        else:
-            self.statistics["unknown_vehicles"] += 1
-        self.statistics["total_vehicles"] += 1
-        self.logger.info(f"New class: {classes[classId]} detected in {self.current_frame/self.fps} second with conf: {label.split(':')[1]}")
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         leftBtmY = max(leftBtmY, labelSize[1])
@@ -203,17 +239,14 @@ class VideoProcessor(QThread):
                         continue
                     confidences.append(float(confidence))
                     boxes.append([leftBtmX, leftBtmY, width, height])
-                    print("X: {0}".format(detection[0]))
-                    print("Y: {0}".format(detection[1]))
-                    doubledDetections.append([[leftBtmX, leftBtmY, width, height], [detection[0], detection[1]]])
-                    print("Bezwzględne: {0}".format([leftBtmX, leftBtmY, width, height]))
-                    # X: 0.5671080946922302
-                    # Y: 0.14301526546478271
-                    # Bezwzględne: [970, 103, 235, 101]
+                    # print("X: {0}".format(detection[0]))
+                    # print("Y: {0}".format(detection[1]))
+                    doubledDetections.append([leftBtmX, leftBtmY, width, height]) # , [detection[0], detection[1]]])
+                    # print("Bezwzględne: {0}".format([leftBtmX, leftBtmY, width, height]))
 
-        boxes = self.compare_pred(doubledDetections)
+        self.compare_pred(doubledDetections, classes, classIds, confidences)
         # print(boxes)
-        indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
+        indices = cv.dnn.NMSBoxes(doubledDetections, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
             box = boxes[i]
@@ -224,7 +257,7 @@ class VideoProcessor(QThread):
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
         # UNCOMMENT TO USE compare_pred:
-        self.detectionsCache.clear()
+        # self.detectionsCache.clear()
         self.detectionsCache = doubledDetections
 
     def get_video_capture(self, path):

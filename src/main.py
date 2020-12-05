@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
             # setting speed and accuracy model for vehicle detection
             model = self.ui.cbSpeedAccur.currentIndex()
 
-            self.processor = VideoProcessor(VIDEO_PATH)#, model)
+            self.processor = VideoProcessor(VIDEO_PATH, model)
             self.processor.on_data_finish.connect(self.on_processor_finish)
             self.processor.on_progress.connect(self.on_progress_func)
             self.processor.start()
@@ -138,7 +138,7 @@ class MainWindow(QMainWindow):
 
     # AFTER VIDEO PROCESSING METHOD
     def on_processor_finish(self, output):
-        global RESULTS
+        global RESULTS, VIDEO_PATH
         RESULTS = output
 
         self.progressTimer.stop()

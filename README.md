@@ -12,6 +12,8 @@ Project developed under Python 3.8.6
 __Here you go__ -> make sure to always run `venv` when doing the project</br>
 *Hint:* Set the Python interpreter in VSCode or PyCharm
 
+---
+
 ## Pipenv - Python packaging tool - an alternative to virtualenv 
 1. Activate Pipenv environment: `pipenv shell`
 2. Install packages: `pipenv install`
@@ -38,6 +40,15 @@ SET PATH=C:\tools\cuda\bin;%PATH%
 ```
 8. PC restart may be necessary to apply changes.
 
-## [yolov4.weights](https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights) - Download and place in the "model" directory
+---
 
-## Make sure to download libvlc.dll and put it into dlls directory in project directory (in order video player to work)
+## Weights - download and place in the "model" directory
+### [YOLOv4](https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights)
+
+### [YOLOv3-tiny](https://pjreddie.com/media/files/yolov3-tiny.weights)
+
+### [YOLOv3](https://pjreddie.com/media/files/yolov3.weights)
+
+---
+
+### Make sure to download libvlc.dll and put it into dlls directory in project directory (in order video player to work)

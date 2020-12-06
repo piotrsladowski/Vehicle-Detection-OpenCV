@@ -141,6 +141,7 @@ class MainWindow(QMainWindow):
         global RESULTS, VIDEO_PATH
         RESULTS = output
 
+        self.update_progress_bar()
         self.progressTimer.stop()
         self.processTimer.stop()
         self.setup_media_player()

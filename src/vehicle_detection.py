@@ -12,6 +12,7 @@ import queue
 from datetime import datetime as dt
 import time
 import math
+from numba import vectorize, jit, cuda
 
 M0 = {
     "classesPath": "src/model/classes.names",
@@ -89,7 +90,7 @@ class VideoProcessor(QThread):
         # How many frames will be skipped. 
         # E.g if value 3 is selected then only 1 frame per 3 frames will be analyzed.
         # 1 is a default value, no frames will be skipped.
-        self.frameSkipperCount = 1
+        self.currentSkipRate = 0
         self.detectionsCache = []
         self.statistics = {
             "total_vehicles": 0,
@@ -133,8 +134,10 @@ class VideoProcessor(QThread):
         formatter.default_time_format = f"{dt.hour}:{dt.minute}:{dt.second}"
         handler.setFormatter(formatter)                       
         
-        self.logger.addHandler(handler)
-
+        #self.logger.addHandler(handler)
+        #6 = int(cap.get(cv.CAP_PROP_FPS) / FACTOR
+        #6 * FACTOR = int(cap.get(cv.CAP_PROP_FPS)
+        #FACTOR = int(cap.get(cv.CAP_PROP_FPS) / 6
         vid_writer = cv.VideoWriter(outputVideoFile,
                     cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS)),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
@@ -247,6 +250,8 @@ class VideoProcessor(QThread):
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
 
+        # return frame
+
     def get_video_capture(self, path):
         if not os.path.isfile(path):
             print("Input file not found")
@@ -257,10 +262,8 @@ class VideoProcessor(QThread):
     def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
         start = time.time()
-
         while True:
             _, frame = cap.read()
-            
             self.current_frame = cap.get(cv.CAP_PROP_POS_FRAMES)
             self.on_progress.emit(self.current_frame / self.maximum)
             frame = imutils.resize(frame)
@@ -269,29 +272,23 @@ class VideoProcessor(QThread):
             frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             frame = np.dstack([frame, frame, frame])
            
-            # Speed up algorithm by skipping frames
-            if(self.frameSkipperCount != 1 and (self.current_frame % self.frameSkipperCount == 0)):
-                vid_writer.write(frame.astype(np.uint8))
-                continue
             # Processing has beed properly ended
             if int(cap.get(cv.CAP_PROP_POS_FRAMES)) == int(cap.get(cv.CAP_PROP_FRAME_COUNT)):
                 exit_status = 0
                 break
 
+            if self.current_frame % 5:
+                vid_writer.write(frame.astype(np.uint8))
+                continue
             blob = cv.dnn.blobFromImage(frame, 1/255, (self.inpWidth, self.inpHeight), [0,0,0], 1, crop=False) 
-
             net.setInput(blob)
-
             outs = net.forward(self.get_outputs_names(net))
-
             self.post_process(frame, classes, outs)
-
             vid_writer.write(frame.astype(np.uint8))
 
-        # Close input video file    
         end = time.time()
         printf("Video Processing done in %.2f seconds.\n", (end-start))
-        print(f"Total number of processed frames: {int(cap.get(cv.CAP_PROP_FRAME_COUNT))}")
+        print(f"Total number of processed frames: {self.maximum}")
         printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
         cap.release()
         cv.destroyAllWindows()

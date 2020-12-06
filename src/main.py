@@ -131,6 +131,7 @@ class MainWindow(QMainWindow):
             self.processor.on_data_finish.connect(self.on_processor_finish)
             self.processor.on_progress.connect(self.on_progress_func)
             self.processor.start()
+            self.pTime = time.time()
             self.processTimer.start()
             self.progressTimer.start()
         else:
@@ -138,6 +139,10 @@ class MainWindow(QMainWindow):
 
     # AFTER VIDEO PROCESSING METHOD
     def on_processor_finish(self, output):
+        self.pTime = time.time() - self.pTime
+        print("Elapsed time: {}".format(self.pTime))
+        print("FPS: {}".format(self.ui.progressBar.maximum() / self.pTime))
+
         global RESULTS, VIDEO_PATH
         RESULTS = output
 
@@ -150,6 +155,8 @@ class MainWindow(QMainWindow):
             print("Done processing, enabling postprocessing info!")
             if type(RESULTS["outVideo"]) == str and RESULTS["outVideo"] is not None:
                 VIDEO_PATH = RESULTS["outVideo"]
+                
+                print("Processed video " + VIDEO_PATH)
 
                 self.media = self.instance.media_new(VIDEO_PATH)
                 self.mediaPlayer.set_media(self.media)

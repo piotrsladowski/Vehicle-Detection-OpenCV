@@ -12,7 +12,8 @@ import queue
 from datetime import datetime as dt
 import time
 import math
-from numba import vectorize, jit, cuda
+import asyncio
+import ffmpeg
 
 M0 = {
     "classesPath": "src/model/classes.names",
@@ -32,7 +33,7 @@ M2 = {
     "modelWeightsPath": "src/model/yolov4.weights",
 }
 
-M4 = {
+M3 = {
     "classesPath": "src/model/classes.names",
     "modelConfigurationPath": "src/model/yolov3-608.cfg",
     "modelWeightsPath": "src/model/yolov3.weights",
@@ -119,6 +120,7 @@ class VideoProcessor(QThread):
         self.current_frame = 0
         self.maximum = cap.get(cv.CAP_PROP_FRAME_COUNT)
         currFilename, currExtenstion = self.sourceVideoPath.split('.')
+        writerVideoFile = f"{currFilename}_middle.{currExtenstion}"
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
 
         logFormat = '%(asctime)s: %(name)8s: %(levelname)8s: %(message)s'
@@ -138,14 +140,19 @@ class VideoProcessor(QThread):
         #6 = int(cap.get(cv.CAP_PROP_FPS) / FACTOR
         #6 * FACTOR = int(cap.get(cv.CAP_PROP_FPS)
         #FACTOR = int(cap.get(cv.CAP_PROP_FPS) / 6
-        vid_writer = cv.VideoWriter(outputVideoFile,
-                    cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS)),
+        vid_writer = cv.VideoWriter(writerVideoFile,
+                    cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS) / 5),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        
+        loop = asyncio.new_event_loop()
         try:
             if self.process_capture(cap, classes, net, vid_writer) == 0:
                 self.logger.handlers.clear()
+                vid_writer.release()
+                interpolate = loop.create_task(self.interp_basic(writerVideoFile, outputVideoFile, self.fps))
+                loop.run_until_complete(interpolate)
+                loop.close()
                 self.on_progress.emit(self.current_frame / self.maximum)
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
         except Exception as e:
@@ -165,6 +172,12 @@ class VideoProcessor(QThread):
         layersNames = network.getLayerNames()
         return [layersNames[i[0] - 1] for i in network.getUnconnectedOutLayers()]
     
+    async def interp_basic(self, iVideo, oVideo, fps):
+        input = ffmpeg.input(iVideo)
+        video_interp = input.video.filter('minterpolate', fps)
+        output = ffmpeg.output(video_interp, oVideo)
+        ffmpeg.run(output)
+
     def log_object(self, classes, class_id, confidence):
         if classes[class_id] in self.classesInterested:
             if classes[class_id] == "car":
@@ -261,7 +274,7 @@ class VideoProcessor(QThread):
 
     def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
-        start = time.time()
+        # start = time.time()
         while True:
             _, frame = cap.read()
             self.current_frame = cap.get(cv.CAP_PROP_POS_FRAMES)
@@ -278,7 +291,7 @@ class VideoProcessor(QThread):
                 break
 
             if self.current_frame % 5:
-                vid_writer.write(frame.astype(np.uint8))
+                # vid_writer.write(frame.astype(np.uint8))
                 continue
             blob = cv.dnn.blobFromImage(frame, 1/255, (self.inpWidth, self.inpHeight), [0,0,0], 1, crop=False) 
             net.setInput(blob)
@@ -286,10 +299,10 @@ class VideoProcessor(QThread):
             self.post_process(frame, classes, outs)
             vid_writer.write(frame.astype(np.uint8))
 
-        end = time.time()
-        printf("Video Processing done in %.2f seconds.\n", (end-start))
-        print(f"Total number of processed frames: {self.maximum}")
-        printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
+        # end = time.time()
+        # printf("Video Processing done in %.2f seconds.\n", (end-start))
+        # print(f"Total number of processed frames: {self.maximum}")
+        # printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
         cap.release()
         cv.destroyAllWindows()
         return exit_status

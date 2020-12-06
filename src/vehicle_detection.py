@@ -10,7 +10,8 @@ from PySide2.QtCore import QThread, Signal
 import logging
 import queue
 from datetime import datetime as dt
-
+import time
+import math
 
 M0 = {
     "classesPath": "src/model/classes.names",
@@ -35,6 +36,9 @@ M4 = {
     "modelConfigurationPath": "src/model/yolov3-608.cfg",
     "modelWeightsPath": "src/model/yolov3.weights",
 }
+
+def printf(format, *args):
+    sys.stdout.write(format % args)
 
 class QueuingHandler(logging.Handler):
     def __init__(self, *args, message_queue, **kwargs):
@@ -79,8 +83,8 @@ class VideoProcessor(QThread):
         else:
             print("Wrong model. Can't find it!")
 
-        self.confThreshold = 0.85   # Only objects with greater confidence will be detecting
-        self.nmsThreshold = 0.4  
+        self.confThreshold = 0.50   # Only objects with greater confidence will be detecting
+        self.nmsThreshold = 0.7 
         self.sourceVideoPath = sourceVideoPath
         # How many frames will be skipped. 
         # E.g if value 3 is selected then only 1 frame per 3 frames will be analyzed.
@@ -208,8 +212,7 @@ class VideoProcessor(QThread):
 
         classIds = []
         confidences = []
-        boxes = []
-        doubledDetections = [] # Store all 
+        boxes = [] 
 
         # Parse coordinates of detected objects to rectangles indices.
         for out in outs:
@@ -253,6 +256,8 @@ class VideoProcessor(QThread):
 
     def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
+        start = time.time()
+
         while True:
             _, frame = cap.read()
             
@@ -284,6 +289,10 @@ class VideoProcessor(QThread):
             vid_writer.write(frame.astype(np.uint8))
 
         # Close input video file    
+        end = time.time()
+        printf("Video Processing done in %.2f seconds.\n", (end-start))
+        print(f"Total number of processed frames: {int(cap.get(cv.CAP_PROP_FRAME_COUNT))}")
+        printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
         cap.release()
         cv.destroyAllWindows()
         return exit_status

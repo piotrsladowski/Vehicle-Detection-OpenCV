@@ -6,6 +6,15 @@
 
 
 # At first ask for admin permissions
+$vlcInstalled = 0
+$vlcPath = ''
+
+$vlcLine = (Get-WMIObject -Query "SELECT * FROM Win32_Product Where Name Like '%VLC media player%'") | Select Caption,InstallLocation 
+if ($vlcLine.Length -gt 0) {
+    $vlcInstalled = 1
+    $vlcPath = $vlcLine.InstallLocation
+}
+
 
 
 # Find local dll's

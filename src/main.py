@@ -155,11 +155,11 @@ class MainWindow(QMainWindow):
                 self.mediaPlayer.set_media(self.media)
                 self.media.parse()
 
-                if sys.platform.startswith('linux'):  # for Linux using the X Server
-                    self.mediaPlayer.set_xwindow(self.ui.frameMediaPlayer.winId())
-                elif sys.platform == "win32":  # for Windows
-                    self.mediaPlayer.set_hwnd(self.ui.frameMediaPlayer.winId())
-                elif sys.platform == "darwin":  # for MacOS
+                if platform.system() == "Linux": # for Linux using the X Server
+                    self.mediaPlayer.set_xwindow(int(self.ui.frameMediaPlayer.winId()))
+                elif platform.system() == "Windows": # for Windows
+                    self.mediaPlayer.set_hwnd(int(self.ui.frameMediaPlayer.winId()))
+                elif platform.system() == "Darwin": # for MacOS
                     self.mediaPlayer.set_nsobject(int(self.ui.frameMediaPlayer.winId()))
 
             if type(RESULTS["stats"]) == dict and RESULTS["stats"] is not None:
@@ -173,6 +173,7 @@ class MainWindow(QMainWindow):
 
             self.toggle_tabs()
             self.ui.tabWidget.setCurrentIndex(1)
+            self.play_video()
 
     def on_progress_func(self, prog):
         global PROGRESS
@@ -223,6 +224,7 @@ class MainWindow(QMainWindow):
     def setup_media_player(self):
         # MEDIA PLAYER
         self.instance = vlc.Instance()
+        self.media = None
         self.mediaPlayer = self.instance.media_player_new()
         self.mediaPlayer.audio_set_mute(True)
 
@@ -263,7 +265,9 @@ class MainWindow(QMainWindow):
                 self.stop_video()
 
     def set_position(self, position):
-        self.mediaPlayer.set_position(round(position / 1000.0))
+        self.videoTimer.stop()
+        self.mediaPlayer.set_position(position / 1000.0)
+        self.videoTimer.start()
 
     def print_time_vTL(self, given_time):
         time_print = time.strftime('%M:%S', time.gmtime(int(round(given_time / 1000))))

@@ -51,29 +51,36 @@ class VideoProcessor(QThread):
 
     def __init__(self, sourceVideoPath, model):
         super().__init__()
+
+        # Windows size in YOLO. Available options are: 320, 416, 608.
+        # This field must be the same as in the YOLO*.cfg file.
+        self.inpWidth = 416        
+        self.inpHeight = 416  
         if model == 0:
             self.model = M0
+            self.inpWidth = 416        
+            self.inpHeight = 416
             print("Chosen model: {}".format("YOLOv3-tiny"))
         elif model == 1:
             self.model = M1
+            self.inpWidth = 320        
+            self.inpHeight = 320
             print("Chosen model: {}".format("YOLOv3-320"))
         elif model == 2:
             self.model = M2
+            self.inpWidth = 416        
+            self.inpHeight = 416
             print("Chosen model: {}".format("YOLOv4 <Default>"))
         elif model == 3:
             self.model = M4
+            self.inpWidth = 608        
+            self.inpHeight = 608
             print("Chosen model: {}".format("YOLOv3-608"))
         else:
             print("Wrong model. Can't find it!")
 
-        self.threshold = 300.0
-
         self.confThreshold = 0.85   # Only objects with greater confidence will be detecting
-        self.nmsThreshold = 0.4
-        # Windows size in YOLO. Available options are: 320, 416, 608.
-        # Remeber to update width and height fields in yolov4.cfg    
-        self.inpWidth = 608        
-        self.inpHeight = 608
+        self.nmsThreshold = 0.4  
         self.sourceVideoPath = sourceVideoPath
         # How many frames will be skipped. 
         # E.g if value 3 is selected then only 1 frame per 3 frames will be analyzed.
@@ -164,39 +171,29 @@ class VideoProcessor(QThread):
             self.statistics["total_vehicles"] += 1
             self.logger.info(f"New class: {classes[class_id]} detected in {self.current_frame/self.fps} second with conf: {confidence}")
 
-    def compare_pred(self, tempDetections, classes, classIds, confidences):
-        if len(self.detectionsCache) == 0:
-            for idx, pred in enumerate(tempDetections):
-                self.log_object(classes, classIds[idx], confidences[idx])
-            return
-
-        # Compare all points in peer-to-peer scenario
-        tempParameters, cachedParameters = [], []
-        for idx, pred in enumerate(tempDetections):
-            # Struktura pred w obiegu: [[705, 21, 193, 109], [0.41815326, 0.071146525]]
-            tempParameters = pred
-            min_lens = []
-            for idxc, cachePred in enumerate(self.detectionsCache):
-                cachedParameters = cachePred
-                X1 = tempParameters[0]
-                Y1 = tempParameters[1]
-                X2 = cachedParameters[0]
-                Y2 = cachedParameters[1]
-                min_lens.append(float(math.sqrt(math.pow(X2-X1, 2) + math.pow(Y2-Y1, 2))))
-
-            if min(min_lens) > self.threshold:
-                self.log_object(classes, classIds[idx], confidences[idx])
-
     def draw_pred(self, frame, classes, classId, conf, leftBtmX, leftBtmY, rightTopX, rightTopY):
+        if classes[classId] not in self.classesInterested:
+            return None
+
         # Draw a rectangle with lightblue line borders of thickness of 3 px
         cv.rectangle(frame, (leftBtmX, leftBtmY), (rightTopX, rightTopY), (255, 178, 50), 3)
 
         label = '%.2f' % conf
+
         if classes:
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
         
-        if (label == None):
-            return None
+        # Update number of detected vehicles
+        if classes[classId] == "car":
+            self.statistics["light_vehicles"] += 1
+        elif classes[classId] == "bus" or classes[classId] == "truck":
+            self.statistics["heavy_vehicles"] += 1
+        elif classes[classId] == "bicycle" or classes[classId] == "motorbike":
+            self.statistics["two_wheel_vehicles"] += 1
+        else:
+            self.statistics["unknown_vehicles"] += 1
+        self.statistics["total_vehicles"] += 1
+        self.logger.info(f"New class: {classes[classId]} detected in {self.current_frame/self.fps} second with conf: {label.split(':')[1]}")
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         leftBtmY = max(leftBtmY, labelSize[1])
@@ -233,20 +230,10 @@ class VideoProcessor(QThread):
                     leftBtmX = int(center_x - width / 2)
                     leftBtmY = int(center_y - height / 2)
                     classIds.append(classId)
-                    if classes[classId] in self.classesInterested:
-                        classIds.append(classId)
-                    else:
-                        continue
                     confidences.append(float(confidence))
                     boxes.append([leftBtmX, leftBtmY, width, height])
-                    # print("X: {0}".format(detection[0]))
-                    # print("Y: {0}".format(detection[1]))
-                    doubledDetections.append([leftBtmX, leftBtmY, width, height]) # , [detection[0], detection[1]]])
-                    # print("Bezwzględne: {0}".format([leftBtmX, leftBtmY, width, height]))
 
-        self.compare_pred(doubledDetections, classes, classIds, confidences)
-        # print(boxes)
-        indices = cv.dnn.NMSBoxes(doubledDetections, confidences, self.confThreshold, self.nmsThreshold)
+        indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
             box = boxes[i]
@@ -256,9 +243,6 @@ class VideoProcessor(QThread):
             height = box[3]
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
-        # UNCOMMENT TO USE compare_pred:
-        # self.detectionsCache.clear()
-        self.detectionsCache = doubledDetections
 
     def get_video_capture(self, path):
         if not os.path.isfile(path):

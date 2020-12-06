@@ -63,10 +63,10 @@ class MainWindow(QMainWindow):
         self.ui.btnChooseFolder.clicked.connect(self.choose_video)
 
         # COMBO BOX SETTINGS
-        self.speed_settings = [ "YOLOv3-tiny (-50% acc, +500% spd)",
-                                "YOLOv3-320 (-10% acc, +20% spd)",
+        self.speed_settings = [ "YOLOv3-tiny (-90% acc, +800% spd)",
+                                "YOLOv3-320 (-20% acc, +20% spd)",
                                 "YOLOv4 <Default>",
-                                "YOLOv3-608 (+10% acc, -20% spd)" 
+                                "YOLOv3-608 (+10% acc, -50% spd)" 
                                 ]
         self.state_combo()
 

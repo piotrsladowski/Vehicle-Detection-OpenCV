@@ -1,19 +1,17 @@
-import math
 import cv2 as cv
-import argparse
 import sys
-import numpy as np
-import os.path
-import imutils
-from PySide2 import QtCore
-from PySide2.QtCore import QThread, Signal
-import logging
-import queue
 from datetime import datetime as dt
 import time
 import math
 import asyncio
+import queue
+import os.path
+import numpy as np
+import imutils
+from PySide2 import QtCore
+from PySide2.QtCore import QThread, Signal
 import ffmpeg
+import logging
 
 M0 = {
     "classesPath": "src/model/classes.names",
@@ -78,7 +76,7 @@ class VideoProcessor(QThread):
             self.inpHeight = 416
             print("Chosen model: {}".format("YOLOv4 <Default>"))
         elif model == 3:
-            self.model = M4
+            self.model = M3
             self.inpWidth = 608        
             self.inpHeight = 608
             print("Chosen model: {}".format("YOLOv3-608"))

@@ -89,7 +89,7 @@ class VideoProcessor(QThread):
         # How many frames will be skipped. 
         # E.g if value 3 is selected then only 1 frame per 3 frames will be analyzed.
         # 1 is a default value, no frames will be skipped.
-        self.frameSkipRate = 0
+        self.frameSkipRate = 1
         self.detectionsCache = []
         self.statistics = {
             "total_vehicles": 0,
@@ -115,9 +115,9 @@ class VideoProcessor(QThread):
 
         cap = self.get_video_capture(self.sourceVideoPath)
         self.fps = int(cap.get(cv.CAP_PROP_FPS))
-        if self.fps < 10 and self.fps % 2:
+        if self.fps < 10 and self.fps % 2 == 0:
             self.frameSkipRate = 2
-        elif self.fps < 10 and not self.fps % 2:
+        elif self.fps < 10 and self.fps % 2 != 0:
             self.frameSkipRate = 1
         elif self.fps > 10 and self.fps in [15,20,25,30,60]:
             self.frameSkipRate = 5
@@ -128,6 +128,9 @@ class VideoProcessor(QThread):
         currFilename, currExtenstion = self.sourceVideoPath.split('.')
         writerVideoFile = f"{currFilename}_middle.{currExtenstion}"
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
+
+        if (self.logger.hasHandlers()):
+            self.logger.handlers.clear()
 
         logFormat = '%(asctime)s: %(name)8s: %(levelname)8s: %(message)s'
         outputLogFile = f"{currFilename}_rendered.log"
@@ -146,7 +149,7 @@ class VideoProcessor(QThread):
                     cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS) / self.frameSkipRate),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
-       
+
         loop = asyncio.new_event_loop()
         try:
             if self.process_capture(cap, classes, net, vid_writer) == 0:
@@ -256,7 +259,6 @@ class VideoProcessor(QThread):
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
 
-        # return frame
 
     def get_video_capture(self, path):
         if not os.path.isfile(path):

@@ -40,6 +40,7 @@ M3 = {
 def printf(format, *args):
     sys.stdout.write(format % args)
 
+
 class QueuingHandler(logging.Handler):
     def __init__(self, *args, message_queue, **kwargs):
         logging.Handler.__init__(self, *args, **kwargs)
@@ -47,6 +48,7 @@ class QueuingHandler(logging.Handler):
 
     def emit(self, record):
         self.message_queue.put(self.format(record).rstrip('\n'))
+
 
 class VideoProcessor(QThread):
 
@@ -103,7 +105,6 @@ class VideoProcessor(QThread):
         self.classesInterested = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
         self.logger = logging.getLogger(name='Vehicle Detector')
         
-
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
             return None
@@ -189,7 +190,6 @@ class VideoProcessor(QThread):
 
     def log_detected_vehicles(self):
         for element in self.logEntries:
-            print(element)
             class_id = element[0]
             confidence = element[1]
             time = element[2]
@@ -219,7 +219,8 @@ class VideoProcessor(QThread):
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
         
         confidence = label.split(':')[1]
-        if [classId, confidence, self.current_frame/self.fps] not in self.logEntries:
+        if [classId, confidence, self.current_frame/self.fps, leftBtmX, leftBtmY] not in self.logEntries:
+            # Duplicate entries reduction
             self.create_log_entry(classId, confidence, self.current_frame/self.fps)
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -258,9 +259,7 @@ class VideoProcessor(QThread):
                     classIds.append(classId)
                     confidences.append(float(confidence))
                     boxes.append([leftBtmX, leftBtmY, width, height])
-                else:
-                    self.statistics["unknown_vehicles"] += 1
-
+                
         indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
             i = i[0]
@@ -271,7 +270,6 @@ class VideoProcessor(QThread):
             height = box[3]
             # Draw rectangles on the frame
             self.draw_pred(frame, classes, classIds[i], confidences[i], leftBtmX, leftBtmY, leftBtmX + width, leftBtmY + height)
-
 
     def get_video_capture(self, path):
         if not os.path.isfile(path):

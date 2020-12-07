@@ -28,11 +28,13 @@ A cross-platform application made as part of the project from software engineeri
 
 <a name="install"></a>
 ## 3. Installation
-PowerShell is highly recommended. **No other legacy environments are supported** Linuks is also not supported.<br>
+PowerShell is highly recommended. **No other legacy environments are supported** Linux is also not supported.<br>
 Project developed under Python 3.8.6
 
 ### For dummies
-Just run *build.ps1*
+Just run *build.ps1*<br>
+If you are not allowed, to run scripts type the following command
+`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 ### For geeks
 ### Virtualenv 

@@ -47,9 +47,7 @@ if (!(Test-Path -Path "./src/model/yolov4.weights")) {
 }
 # libvlc.dll download (if not found on system hard drive)
 if ($vlcInstalled -eq 0) {
-    Invoke-WebRequest -Uri "https://downloads.dllspedia.com/dlls/libvlc_dll_64bit_2_2_2_0.zip" -OutFile "./dlls/libvlc.zip"
-    Expand-Archive "./dlls/libvlc.zip" -DestinationPath "./dlls/"
-    Remove-Item "./dlls/libvlc.zip"
+    Invoke-WebRequest -Uri "https://api.onedrive.com/v1.0/shares/u!aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBcnVsR3pSOEsyS0NoTUJjRUw3VEJ4OHR0eWlEMFE_ZT02TUVPR0I/root/content" -OutFile "./dlls/libvlc.dll"
 }
 
 if ($ffmpeg -eq 0) {
@@ -61,8 +59,9 @@ if ($ffmpeg -eq 0) {
 }
 
 # venv section
+pip3 install virtualenv
 virtualenv env
 ./env/Scripts/activate
-pip install -r ./requirements.txt
+pip3 install -r ./requirements.txt
 
 # end setup

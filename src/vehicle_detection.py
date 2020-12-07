@@ -89,7 +89,7 @@ class VideoProcessor(QThread):
         # How many frames will be skipped. 
         # E.g if value 3 is selected then only 1 frame per 3 frames will be analyzed.
         # 1 is a default value, no frames will be skipped.
-        self.currentSkipRate = 0
+        self.frameSkipRate = 0
         self.detectionsCache = []
         self.statistics = {
             "total_vehicles": 0,
@@ -115,6 +115,14 @@ class VideoProcessor(QThread):
 
         cap = self.get_video_capture(self.sourceVideoPath)
         self.fps = int(cap.get(cv.CAP_PROP_FPS))
+        if self.fps < 10 and self.fps % 2:
+            self.frameSkipRate = 2
+        elif self.fps < 10 and not self.fps % 2:
+            self.frameSkipRate = 1
+        elif self.fps > 10 and self.fps in [15,20,25,30,60]:
+            self.frameSkipRate = 5
+        else:
+            self.frameSkipRate = 1
         self.current_frame = 0
         self.maximum = cap.get(cv.CAP_PROP_FRAME_COUNT)
         currFilename, currExtenstion = self.sourceVideoPath.split('.')
@@ -134,12 +142,8 @@ class VideoProcessor(QThread):
         formatter.default_time_format = f"{dt.hour}:{dt.minute}:{dt.second}"
         handler.setFormatter(formatter)                       
         
-        #self.logger.addHandler(handler)
-        #6 = int(cap.get(cv.CAP_PROP_FPS) / FACTOR
-        #6 * FACTOR = int(cap.get(cv.CAP_PROP_FPS)
-        #FACTOR = int(cap.get(cv.CAP_PROP_FPS) / 6
         vid_writer = cv.VideoWriter(writerVideoFile,
-                    cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS) / 5),
+                    cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS) / self.frameSkipRate),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
                     int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)))) 
        
@@ -184,8 +188,6 @@ class VideoProcessor(QThread):
                 self.statistics["heavy_vehicles"] += 1
             elif classes[class_id] == "bicycle" or classes[class_id] == "motorbike":
                 self.statistics["two_wheel_vehicles"] += 1
-            else:
-                self.statistics["unknown_vehicles"] += 1
             self.statistics["total_vehicles"] += 1
             self.logger.info(f"New class: {classes[class_id]} detected in {self.current_frame/self.fps} second with conf: {confidence}")
 
@@ -201,17 +203,8 @@ class VideoProcessor(QThread):
         if classes:
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
         
-        # Update number of detected vehicles
-        if classes[classId] == "car":
-            self.statistics["light_vehicles"] += 1
-        elif classes[classId] == "bus" or classes[classId] == "truck":
-            self.statistics["heavy_vehicles"] += 1
-        elif classes[classId] == "bicycle" or classes[classId] == "motorbike":
-            self.statistics["two_wheel_vehicles"] += 1
-        else:
-            self.statistics["unknown_vehicles"] += 1
-        self.statistics["total_vehicles"] += 1
-        self.logger.info(f"New class: {classes[classId]} detected in {self.current_frame/self.fps} second with conf: {label.split(':')[1]}")
+        confidence = label.split(':')[1]
+        self.log_object(classes, classId, confidence)
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         leftBtmY = max(leftBtmY, labelSize[1])
@@ -249,6 +242,8 @@ class VideoProcessor(QThread):
                     classIds.append(classId)
                     confidences.append(float(confidence))
                     boxes.append([leftBtmX, leftBtmY, width, height])
+                else:
+                    self.statistics["unknown_vehicles"] += 1
 
         indices = cv.dnn.NMSBoxes(boxes, confidences, self.confThreshold, self.nmsThreshold)
         for i in indices:
@@ -272,7 +267,7 @@ class VideoProcessor(QThread):
 
     def process_capture(self, cap, classes, net, vid_writer):
         exit_status = 1
-        # start = time.time()
+        start = time.time()
         while True:
             _, frame = cap.read()
             self.current_frame = cap.get(cv.CAP_PROP_POS_FRAMES)
@@ -288,7 +283,7 @@ class VideoProcessor(QThread):
                 exit_status = 0
                 break
 
-            if self.current_frame % 5:
+            if self.current_frame % self.frameSkipRate:
                 # vid_writer.write(frame.astype(np.uint8))
                 continue
             blob = cv.dnn.blobFromImage(frame, 1/255, (self.inpWidth, self.inpHeight), [0,0,0], 1, crop=False) 
@@ -297,10 +292,10 @@ class VideoProcessor(QThread):
             self.post_process(frame, classes, outs)
             vid_writer.write(frame.astype(np.uint8))
 
-        # end = time.time()
-        # printf("Video Processing done in %.2f seconds.\n", (end-start))
-        # print(f"Total number of processed frames: {self.maximum}")
-        # printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
+        end = time.time()
+        printf("Video Processing done in %.2f seconds.\n", (end-start))
+        print(f"Total number of processed frames: {self.maximum}")
+        printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
         cap.release()
         cv.destroyAllWindows()
         return exit_status

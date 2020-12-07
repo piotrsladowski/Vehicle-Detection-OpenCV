@@ -37,8 +37,8 @@ Just run *build.ps1*
 ### For geeks
 ### Virtualenv 
 1. Get `virtualenv` using `pip3 install virtualenv`
-2. `virtualenv <envName>`. 
-3. `cd <project-directory>`
+2. `cd <project-directory>`
+3. `virtualenv <envName>` 
 4. `.\<envName>\Scripts\activate`
 5. Install all required modules using `pip3 install -r requirements.txt`
 6. Run app by typing `python .\src\main.py`
@@ -73,7 +73,13 @@ FFmpeg is required for interpolating video.
 3.1 Alternatively download latest build from [here](https://www.gyan.dev/ffmpeg/builds/) and add ffmpeg.exe to the `$Path` <br> `$env:Path += ";<path_to_ffmpeg>"`.
 
 <a name="screens"></a>
-## 4. Screen shoots
+## 4. Screen shots
+![Start Screen](https://github.com/piotrsladowski/IO_VehicleDetection/blob/main/screens/tab_start.png)
+![Start Screen - ComboBox](https://github.com/piotrsladowski/IO_VehicleDetection/blob/main/screens/tab_combo.png)
+![Start Screen after processing](https://github.com/piotrsladowski/IO_VehicleDetection/blob/main/screens/tab_main.png)
+![Video tab](https://github.com/piotrsladowski/IO_VehicleDetection/blob/main/screens/tab_video.png)
+![Logs tab](https://github.com/piotrsladowski/IO_VehicleDetection/blob/main/screens/tab_logs.png)
+![Stats tab](https://github.com/piotrsladowski/IO_VehicleDetection/blob/main/screens/tab_stats.png)
 
 <a name="crea"></a>
 ## 5. Creators

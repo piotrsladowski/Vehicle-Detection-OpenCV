@@ -91,6 +91,8 @@ class VideoProcessor(QThread):
         # 1 is a default value, no frames will be skipped.
         self.frameSkipRate = 1
         self.detectionsCache = []
+        self.classes = []
+        self.logEntries = []
         self.statistics = {
             "total_vehicles": 0,
             "light_vehicles": 0,
@@ -108,6 +110,7 @@ class VideoProcessor(QThread):
 
         classesName, modelConfiguration, modelWeights, *_ = self.model.values()
         classes = self.load_classes(classesName)
+        self.classes = classes
 
         net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
         net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
@@ -154,6 +157,7 @@ class VideoProcessor(QThread):
         try:
             if self.process_capture(cap, classes, net, vid_writer) == 0:
                 self.logger.handlers.clear()
+                self.log_detected_vehicles()
                 vid_writer.release()
                 interpolate = loop.create_task(self.interp_basic(writerVideoFile, outputVideoFile, self.fps))
                 loop.run_until_complete(interpolate)
@@ -183,16 +187,24 @@ class VideoProcessor(QThread):
         output = ffmpeg.output(video_interp, oVideo)
         ffmpeg.run(output)
 
-    def log_object(self, classes, class_id, confidence):
-        if classes[class_id] in self.classesInterested:
-            if classes[class_id] == "car":
-                self.statistics["light_vehicles"] += 1
-            elif classes[class_id] == "bus" or classes[class_id] == "truck":
-                self.statistics["heavy_vehicles"] += 1
-            elif classes[class_id] == "bicycle" or classes[class_id] == "motorbike":
-                self.statistics["two_wheel_vehicles"] += 1
+    def log_detected_vehicles(self):
+        for element in self.logEntries:
+            print(element)
+            class_id = element[0]
+            confidence = element[1]
+            time = element[2]
+            if self.classes[class_id] in self.classesInterested:
+                if self.classes[class_id] == "car":
+                    self.statistics["light_vehicles"] += 1
+                elif self.classes[class_id] == "bus" or self.classes[class_id] == "truck":
+                    self.statistics["heavy_vehicles"] += 1
+                elif self.classes[class_id] == "bicycle" or self.classes[class_id] == "motorbike":
+                    self.statistics["two_wheel_vehicles"] += 1   
             self.statistics["total_vehicles"] += 1
-            self.logger.info(f"New class: {classes[class_id]} detected in {self.current_frame/self.fps} second with conf: {confidence}")
+            self.logger.info(f"New class: {self.classes[class_id]} detected in {time} second with conf: {confidence}")
+
+    def create_log_entry(self, class_id, confidence, time):
+        self.logEntries.append([class_id, confidence, time])
 
     def draw_pred(self, frame, classes, classId, conf, leftBtmX, leftBtmY, rightTopX, rightTopY):
         if classes[classId] not in self.classesInterested:
@@ -207,7 +219,8 @@ class VideoProcessor(QThread):
             label = '%s:%s' % (classes[classId], label) if classes[classId] in self.classesInterested else None
         
         confidence = label.split(':')[1]
-        self.log_object(classes, classId, confidence)
+        if [classId, confidence, self.current_frame/self.fps] not in self.logEntries:
+            self.create_log_entry(classId, confidence, self.current_frame/self.fps)
 
         labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         leftBtmY = max(leftBtmY, labelSize[1])

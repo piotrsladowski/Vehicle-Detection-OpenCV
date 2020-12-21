@@ -23,11 +23,12 @@ $ffmpegLine = $env:Path.Split(';') | Select-String -pattern 'ffmpeg'
 if ($ffmpegLine.Length -gt 0) {
     $ffmpeg = 1
     Write-Host "ffmpeg already installed"
-} else if ((choco --version).Length -gt 0) {
+} elseif ((choco --version).Length -gt 0) {
     if ((choco list --local | Select-String -pattern "ffmpeg").Length -gt 0) {
         $ffmpeg = 1
         Write-Host "ffmpeg already installed with chocolatey"
-} else if ((scoop).Length -eq 30) {
+    }
+} elseif ((scoop).Length -eq 30) {
     if ((scoop list | Select-String -pattern "ffmpeg").Length -gt 0) {
         $ffmpeg = 1
         Write-Host "ffmpeg already installed with scoop"

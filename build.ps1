@@ -15,6 +15,7 @@ $vlcLine = Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\U
 if ($vlcLine.Length -gt 0) {
     $vlcInstalled = 1
     $libvlcPath = $vlcLine.InstallLocation + "\libvlc.dll"
+    New-Item -ItemType Directory -Force -Path "./dlls"
     Copy-Item $libvlcPath -Destination "./dlls/libvlc.dll"
 }
 
@@ -48,6 +49,7 @@ if (!(Test-Path -Path "./src/model/yolov4.weights")) {
 }
 # libvlc.dll download (if not found on system hard drive)
 if ($vlcInstalled -eq 0) {
+    New-Item -ItemType Directory -Force -Path "./dlls"
     Invoke-WebRequest -Uri "https://api.onedrive.com/v1.0/shares/u!aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBcnVsR3pSOEsyS0NoTUJjRUw3VEJ4OHR0eWlEMFE_ZT02TUVPR0I/root/content" -OutFile "./dlls/libvlc.dll"
 }
 
@@ -55,6 +57,7 @@ if ($ffmpeg -eq 0) {
     Invoke-WebRequest -Uri "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2020-12-07-12-50/ffmpeg-N-100214-g95fd790c14-win64-gpl-vulkan.zip" -OutFile "./ffmpeg.zip"
     Expand-Archive "./ffmpeg.zip" -DestinationPath "./ffmpeg/"
     Copy-Item "./ffmpeg/ffmpeg-N-100214-g95fd790c14-win64-gpl-vulkan/bin/ffmpeg.exe" -Destination "./"
+    Copy-Item "./ffmpeg/ffmpeg-N-100214-g95fd790c14-win64-gpl-vulkan/bin/ffprobe.exe" -Destination "./"
     Remove-Item -Recurse "./ffmpeg"
     Remove-Item "./ffmpeg.zip"
 }

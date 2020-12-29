@@ -31,12 +31,14 @@ A cross-platform application made as part of the project from software engineeri
 PowerShell is highly recommended. **No other legacy environments are supported** Linux is also not supported.<br>
 Project developed under Python 3.8.6
 
-### For dummies
+## For dummies
 Just run *build.ps1*<br>
-If you are not allowed, to run scripts type the following command
-`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
+If you are not allowed to run scripts type the following command
+`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` <br>
+Activate virtual enviroment `.\<envName>\Scripts\activate`. <br>
+Run app by typing `python .\src\main.py` (path must be relative).
 
-### For geeks
+## For geeks
 ### Virtualenv 
 1. Get `virtualenv` using `pip3 install virtualenv`
 2. `cd <project-directory>`
@@ -70,9 +72,9 @@ __Here you go__ -> make sure to always run `venv` when doing the project</br>
 libVLC is required for internal video player.
 FFmpeg is required for interpolating video.
 1. Download latest VLC [3.0.11](https://get.videolan.org/vlc/3.0.11/win64/vlc-3.0.11-win64.exe).
-2. Extract *libvlc.dll* and copy it into the *dlls* folder.
+2. Extract *libvlc.dll* and copy it into the *dlls* folder. *dlls* folder must be in main directory.
 3. Install FFmpeg `choco install ffmpeg`<br>
-3.1 Alternatively download latest build from [here](https://www.gyan.dev/ffmpeg/builds/) and add ffmpeg.exe to the `$Path` <br> `$env:Path += ";<path_to_ffmpeg>"`.
+3.1 Alternatively download latest build from [here](https://www.gyan.dev/ffmpeg/builds/) and add ffmpeg.exe and ffprobe.exe to the `$Path` <br> `$env:Path += ";<path_to_ffmpeg>"`.
 
 <a name="screens"></a>
 ## 4. Screen shots

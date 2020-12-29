@@ -12,6 +12,7 @@ from PySide2 import QtCore
 from PySide2.QtCore import QThread, Signal
 import ffmpeg
 import logging
+import subprocess
 
 M0 = {
     "classesPath": "src/model/classes.names",
@@ -128,7 +129,12 @@ class VideoProcessor(QThread):
         else:
             self.frameSkipRate = 1
         self.current_frame = 0
-        self.maximum = cap.get(cv.CAP_PROP_FRAME_COUNT)
+        if os.name == 'nt':
+            ffprobe_output = subprocess.check_output('powershell.exe "ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {0}"'.format(self.sourceVideoPath), stderr=subprocess.STDOUT, shell=True)
+        elif os.name == 'posix':
+            ffprobe_output = subprocess.check_output('ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {0}'.format(self.sourceVideoPath), stderr=subprocess.STDOUT, shell=True)
+        ffprobe_output = ffprobe_output.rstrip().decode('utf-8')
+        self.maximum = int(ffprobe_output)
         currFilename, currExtenstion = self.sourceVideoPath.split('.')
         writerVideoFile = f"{currFilename}_middle.{currExtenstion}"
         outputVideoFile = f"{currFilename}_rendered.{currExtenstion}"
@@ -292,13 +298,14 @@ class VideoProcessor(QThread):
             frame = np.dstack([frame, frame, frame])
            
             # Processing has beed properly ended
-            if int(cap.get(cv.CAP_PROP_POS_FRAMES)) == int(cap.get(cv.CAP_PROP_FRAME_COUNT)):
+            if int(cap.get(cv.CAP_PROP_POS_FRAMES)) == self.maximum:
                 exit_status = 0
                 break
 
             if self.current_frame % self.frameSkipRate:
                 # vid_writer.write(frame.astype(np.uint8))
                 continue
+
             blob = cv.dnn.blobFromImage(frame, 1/255, (self.inpWidth, self.inpHeight), [0,0,0], 1, crop=False) 
             net.setInput(blob)
             outs = net.forward(self.get_outputs_names(net))
@@ -308,7 +315,7 @@ class VideoProcessor(QThread):
         end = time.time()
         printf("Video Processing done in %.2f seconds.\n", (end-start))
         print(f"Total number of processed frames: {self.maximum}")
-        printf("Mean frames per second rate: %.2f\n", cap.get(cv.CAP_PROP_FRAME_COUNT)/(end-start))
+        printf("Mean frames per second rate: %.2f\n", self.maximum/(end-start))
         cap.release()
         cv.destroyAllWindows()
         return exit_status

@@ -804,7 +804,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.titleIcon.setText("")
-        self.titleLabel.setText(QCoreApplication.translate("MainWindow", u"IO Vehicle Detection", None))
+        self.titleLabel.setText(QCoreApplication.translate("MainWindow", u"Vehicle Detection OpenCV", None))
         self.btnMinimize.setText("")
         self.btnMaximize.setText("")
         self.btnClose.setText("")
@@ -812,7 +812,7 @@ class Ui_MainWindow(object):
         self.lineEdit.setText("")
         self.lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Type the path to file, drag it onto the bar or choose file from the dialog..", None))
         self.btnChooseFolder.setText(QCoreApplication.translate("MainWindow", u"   Choose File", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"Some Intro Text", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"https://www.youtube.com/watch?v=dQw4w9WgXcQt?Z0DO0XyS8Ko?jNQXAC9IVRw", None))
         self.btnProcess.setText(QCoreApplication.translate("MainWindow", u" Process!", None))
         self.labelProgress.setText(QCoreApplication.translate("MainWindow", u"Complete process in: ", None))
         self.labelTimeLeft.setText(QCoreApplication.translate("MainWindow", u"00:00:00", None))

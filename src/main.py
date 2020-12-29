@@ -13,7 +13,8 @@ from PySide2.QtCore import QSize, Qt, QCoreApplication, QUrl
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import *
 
-os.add_dll_directory(os.path.abspath("./dlls"))
+if os.name == 'nt':
+    os.add_dll_directory(os.path.abspath("./dlls"))
 import vlc
 
 from gui.ui_main import Ui_MainWindow
@@ -150,6 +151,8 @@ class MainWindow(QMainWindow):
         self.progressTimer.stop()
         self.processTimer.stop()
         self.setup_media_player()
+        self.ui.btnProcess.setEnabled(True)
+        self.ui.cbSpeedAccur.setEnabled(True)
 
         if RESULTS["done"]:
             print("Done processing, enabling postprocessing info!")

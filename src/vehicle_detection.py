@@ -104,7 +104,7 @@ class VideoProcessor(QThread):
             "unknown_vehicles": 0
         }
         self.classesInterested = ['bicycle', 'motorbike', 'car', 'bus', 'truck']
-        self.logger = logging.getLogger(name='Vehicle Detector')
+        self.logger = logging.getLogger(__name__)
         
     def run(self):
         if not os.path.isfile(self.sourceVideoPath):
@@ -144,17 +144,19 @@ class VideoProcessor(QThread):
 
         logFormat = '%(asctime)s: %(name)8s: %(levelname)8s: %(message)s'
         outputLogFile = f"{currFilename}_rendered.log"
-        logging.basicConfig(filename=outputLogFile, filemode='w',
-                            format=logFormat, level=logging.DEBUG)
+        logging.basicConfig(filename=outputLogFile, filemode='w', format=logFormat, level=logging.DEBUG)
     
+        fH = logging.FileHandler(filename=outputLogFile, mode='w')
 
         message_queue = queue.Queue()
-        handler = QueuingHandler(message_queue=message_queue, level=logging.DEBUG)
+        qH = QueuingHandler(message_queue=message_queue, level=logging.DEBUG)
 
         formatter = logging.Formatter(logFormat)
         formatter.default_time_format = f"{dt.hour}:{dt.minute}:{dt.second}"
-        handler.setFormatter(formatter)                       
-        
+        qH.setFormatter(formatter)                       
+        self.logger.addHandler(fH)
+        self.logger.addHandler(qH)
+
         vid_writer = cv.VideoWriter(writerVideoFile,
                     cv.VideoWriter_fourcc(*'mp4v'), int(cap.get(cv.CAP_PROP_FPS) / self.frameSkipRate),
                     (int(cap.get(cv.CAP_PROP_FRAME_WIDTH)),
@@ -165,15 +167,18 @@ class VideoProcessor(QThread):
             if self.process_capture(cap, classes, net, vid_writer) == 0:
                 self.logger.handlers.clear()
                 self.log_detected_vehicles()
+                logging.shutdown()
                 vid_writer.release()
                 interpolate = loop.create_task(self.interp_basic(writerVideoFile, outputVideoFile, self.fps))
                 loop.run_until_complete(interpolate)
                 loop.close()
+                os.remove(writerVideoFile)
                 self.on_progress.emit(self.current_frame / self.maximum)
                 self.on_data_finish.emit({"done": True, "outVideo": outputVideoFile, "outLog": outputLogFile, "stats": self.statistics})
         except Exception as e:
             self.logger.error(str(e))
             self.logger.handlers.clear()
+            logging.shutdown()
             self.on_data_finish.emit({"done": False, "outVideo": None, "outLog": None, "stats": None})
 
     def load_classes(self, path):
@@ -192,7 +197,7 @@ class VideoProcessor(QThread):
         input = ffmpeg.input(iVideo)
         video_interp = input.video.filter('minterpolate', fps)
         output = ffmpeg.output(video_interp, oVideo)
-        ffmpeg.run(output)
+        ffmpeg.run(output, overwrite_output=True)
 
     def log_detected_vehicles(self):
         for element in self.logEntries:

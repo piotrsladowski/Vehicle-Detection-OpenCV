@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
 
         # CHOOSE VIDEO FILE
         self.ui.btnChooseFolder.clicked.connect(self.choose_video)
+        self.ui.lineEdit.setDragEnabled(True)
 
         # COMBO BOX SETTINGS
         self.speed_settings = [ "YOLOv3-tiny (-90% acc, +800% spd)",
@@ -119,30 +120,34 @@ class MainWindow(QMainWindow):
     def process_video(self):
         global VIDEO_PATH, PROGRESS
         PROGRESS = 0.0
-        if self.ui.lineEdit.text() != '':
-            self.ui.btnProcess.setEnabled(False)
-            self.ui.cbSpeedAccur.setEnabled(False)
+        self.close_tabs()
+        video_file = self.ui.lineEdit.text()
+        if video_file != '':
+            if self.check_ext(os.path.basename(video_file)):
+                self.ui.btnProcess.setEnabled(False)
+                self.ui.cbSpeedAccur.setEnabled(False)
 
-            print("Processing video " + self.ui.lineEdit.text())
-            VIDEO_PATH = self.ui.lineEdit.text()
-            # setting speed and accuracy model for vehicle detection
-            model = self.ui.cbSpeedAccur.currentIndex()
+                self.print_ui("Processing video " + video_file)
+                VIDEO_PATH = video_file
+                # setting speed and accuracy model for vehicle detection
+                model = self.ui.cbSpeedAccur.currentIndex()
 
-            self.processor = VideoProcessor(VIDEO_PATH, model)
-            self.processor.on_data_finish.connect(self.on_processor_finish)
-            self.processor.on_progress.connect(self.on_progress_func)
-            self.processor.start()
-            self.pTime = time.time()
-            self.processTimer.start()
-            self.progressTimer.start()
+                self.processor = VideoProcessor(VIDEO_PATH, model)
+                self.processor.on_data_finish.connect(self.on_processor_finish)
+                self.processor.on_progress.connect(self.on_progress_func)
+                self.processor.start()
+                self.pTime = time.time()
+                self.processTimer.start()
+                self.progressTimer.start()
+            else:
+                self.print_ui("Wrong extension of the chosen file! Choose another one! This time with the right extension!")
         else:
-            print("No video selected")
+            self.print_ui("No video selected")
 
     # AFTER VIDEO PROCESSING METHOD
     def on_processor_finish(self, output):
         self.pTime = time.time() - self.pTime
-        print("Elapsed time: {}".format(self.pTime))
-        print("FPS: {}".format(self.ui.progressBar.maximum() / self.pTime))
+        self.print_ui("Elapsed time: {0}\nFPS: {1}".format(self.pTime, (self.ui.progressBar.maximum() / self.pTime)))
 
         global RESULTS, VIDEO_PATH
         RESULTS = output
@@ -181,9 +186,9 @@ class MainWindow(QMainWindow):
                         self.ui.textBrowser.appendPlainText(line)
                     f.close()
 
-            self.toggle_tabs()
+            self.open_tabs()
             self.ui.tabWidget.setCurrentIndex(1)
-            self.play_video()
+            # self.play_video()
 
     def on_progress_func(self, prog):
         global PROGRESS
@@ -196,6 +201,16 @@ class MainWindow(QMainWindow):
         self.ui.labelNoCgoVar.setText(str(stats["heavy_vehicles"]))
         self.ui.labelNoMotorVar.setText(str(stats["two_wheel_vehicles"]))
         self.ui.labelNoUnkVar.setText(str(stats["unknown_vehicles"]))
+
+    def check_ext(self, file):
+        _, ext = file.split('.')
+        if ext not in ["mp4", "mkv", "avi"]:
+            return False
+        else:
+            return True
+
+    def print_ui(self, text):
+        self.ui.label.setText(text)
 
     # TABS TOGGLING
     def toggle_tabs(self):
@@ -211,6 +226,24 @@ class MainWindow(QMainWindow):
             self.ui.tabWidget.setTabEnabled(2, True)
             self.ui.tabWidget.setTabEnabled(3, True)
             GLOBAL_TABS_ENABLED = True
+
+    def open_tabs(self):
+        global GLOBAL_TABS_ENABLED
+        areEnabled = GLOBAL_TABS_ENABLED
+        if not areEnabled:
+            self.ui.tabWidget.setTabEnabled(1, True)
+            self.ui.tabWidget.setTabEnabled(2, True)
+            self.ui.tabWidget.setTabEnabled(3, True)
+            GLOBAL_TABS_ENABLED = True
+
+    def close_tabs(self):
+        global GLOBAL_TABS_ENABLED
+        areEnabled = GLOBAL_TABS_ENABLED
+        if areEnabled:
+            self.ui.tabWidget.setTabEnabled(1, False)
+            self.ui.tabWidget.setTabEnabled(2, False)
+            self.ui.tabWidget.setTabEnabled(3, False)
+            GLOBAL_TABS_ENABLED = False
 
     # UPDATE labelTimeLeft EVERY SECOND
     def update_progress_time(self):
